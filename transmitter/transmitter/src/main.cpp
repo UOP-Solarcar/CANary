@@ -15,6 +15,7 @@
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
 
+MCP2515 mcp2515(10);
 // Singleton instance of the radio driver
 RH_RF95 driver;
 
@@ -40,7 +41,7 @@ void setup()
   driver.setCADTimeout(100);
 }
 
-char data[8];
+uint8_t data[12];
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
@@ -50,7 +51,13 @@ void loop()
   while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
     Serial.println("Sending to rf95_reliable_datagram_server");
     
-    data = f.can_id + f.data;
+    data[0] = (f.can_id >> 24) & 0xFF;
+    data[1] = (f.can_id >> 16) & 0xFF;
+    data[2] = (f.can_id >> 8) & 0xFF;
+    data[3] = f.can_id & 0xFF;
+
+    memcpy(&data[4], f.data, 8);
+    
     // Send a message to manager_server
     if (!manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS)) Serial.println("sendtoWait failed");  
   }  
