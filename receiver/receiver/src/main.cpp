@@ -7,6 +7,7 @@
  * Referenced : https://github.com/UOP-Solarcar/systems-and-controls/blob/master/battery_protection/bps_fix/src/main.cpp
  *              https://registry.platformio.org/libraries/epsilonrt/RadioHead/examples/rf95/rf95_reliable_datagram_client/rf95_reliable_datagram_client.pde
  *******************************************************************/
+
 #include <RHReliableDatagram.h>
 #include <RH_RF95.h>
 #include <SPI.h>
@@ -18,7 +19,7 @@
 RH_RF95 driver;
 
 // Class to manage message delivery and receipt, using the driver declared above
-RHReliableDatagram manager(driver, CLIENT_ADDRESS);
+RHReliableDatagram manager(driver, SERVER_ADDRESS);
 
 
 void setup() 
