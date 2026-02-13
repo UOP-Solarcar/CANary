@@ -44,4 +44,4 @@ if __name__ == "__main__":
     while True:
         frame = read_frame(ser)
         if frame is not None:
-            print("Received frame:", frame)
+            print("Received frame:", frame.decode(encoding="utf-8", errors="strict"))
