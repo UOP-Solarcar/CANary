@@ -5,6 +5,6 @@ import dashboard
 if __name__ == '__main__':
     pid = os.fork()
     if (pid > 0):
-        serialRcv.serialRcv()
+        os.system("streamlit run application/dashboard.py")
     else:
-        os.system("streamlit run dashboard.py")
+        serialRcv.serialRcv()
