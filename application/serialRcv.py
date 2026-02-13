@@ -1,6 +1,19 @@
 import serial
+import argparse
 
-PORT = "COM3"          # Serial port
+parser = argparse.ArgumentParser(description="Serial Receiver")
+
+# 2. Add arguments
+parser.add_argument("OS", type=str, help="The OS of running machine")
+
+# 3. Parse the arguments
+args = parser.parse_args()
+
+if (args.OS == "Mac"): # sets the serial port
+    PORT = "dev/tty.usbmodem21101"
+elif (args.OS == "Windows"):
+    PORT = "COM3"
+
 BAUD = 115200          # rate of transmission in bps
 
 STX = 0x02             # start of serial frame
@@ -27,7 +40,7 @@ def read_frame(ser):
             return bytes(payload)
         payload.append(b[0])
 
-def serialRcv():
+if __name__ == "__main__":
     while True:
         frame = read_frame(ser)
         if frame is not None:
