@@ -1,5 +1,4 @@
 import serial
-import argparse
 import os
 
 if (os.name == "posix"): # sets the serial port
@@ -9,8 +8,8 @@ elif (os.name == "nt"):
 
 BAUD = 115200          # rate of transmission in bps
 
-STX = 0x02             # start of serial frame
-ETX = 0x03             # end of serial frame
+STX = 0x0A             # start of serial frame
+ETX = 0x0A            # end of serial frame
 
 ser = serial.Serial(PORT, BAUD, timeout=1)
 
@@ -37,4 +36,10 @@ def serialRcv():
     while True:
         frame = read_frame(ser)
         if frame is not None:
-            print("Received frame:", frame.decode(encoding="utf-8", errors="strict"))
+            #print("Received frame:", frame.decode(encoding='utf-8'))
+            None
+        else:
+            print("No data in frame")
+
+if __name__ == "__main__":
+    serialRcv()
