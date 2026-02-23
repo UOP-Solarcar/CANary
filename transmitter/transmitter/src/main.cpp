@@ -16,7 +16,7 @@
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
 
-MCP2515 mcp2515(10);
+MCP2515 mcp2515(13);
 // Singleton instance of the radio driver
 RH_RF95 driver;
 
