@@ -21,8 +21,6 @@
 
 // Singleton instance of the radio driver
 RH_RF95 driver(RFM95_CS, RFM95_INT);
-pinMode(RFM95_CS, OUTPUT);
-digitalWrite(RFM95_CS, HIGH);
 
 // Class to manage message delivery and receipt, using the driver declared above
 RHReliableDatagram manager(driver, SERVER_ADDRESS);
@@ -31,6 +29,9 @@ RHReliableDatagram manager(driver, SERVER_ADDRESS);
 void setup() 
 {
   Serial.begin(115200); while(!Serial){;}
+
+  pinMode(RFM95_CS, OUTPUT);
+  digitalWrite(RFM95_CS, HIGH);
 
   // ── LoRa init ───────────────────────────────────────────────────────────────
   Serial.print("LoRa init... ");
