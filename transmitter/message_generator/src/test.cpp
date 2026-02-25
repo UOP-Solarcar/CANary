@@ -1,9 +1,10 @@
-#include <Arduino.h>
+/*#include <Arduino.h>
 #include <SPI.h>
 #include <mcp2515.h>
 
-MCP2515 mcp2515(10); // CS on D10
+MCP2515 mcp2515(15);
 
+// ── Data structure for a CAN message ─────────────────────────────────────────
 struct CANMessage {
   uint32_t id;
   uint8_t  data[8];
@@ -88,11 +89,12 @@ void sendMessages(const CANMessage* msgs, size_t count, uint16_t intervalMs = 10
   frame.can_dlc = 8;
 
   for (size_t i = 0; i < count; i++) {
-    frame.can_id = msgs[i].id;
+    frame.can_id = msgs[i].id;          // Standard 11-bit frame (no EFF flag)
     memcpy(frame.data, msgs[i].data, 8);
 
     MCP2515::ERROR err = mcp2515.sendMessage(&frame);
 
+    // Serial feedback
     Serial.print(err == MCP2515::ERROR_OK ? "[OK]  " : "[ERR] ");
     Serial.print("ID: 0x");
     Serial.print(msgs[i].id, HEX);
@@ -114,7 +116,7 @@ void setup() {
   while (!Serial);
   Serial.println("Booting...");
 
-  SPI.begin();
+  SPI.begin(); // MOSI=D7, MISO=D6, SCK=D5, CS=D8
   mcp2515.reset();
   mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ); // Change to MCP_16MHZ if needed
   mcp2515.setNormalMode();
@@ -122,22 +124,23 @@ void setup() {
   Serial.println("MCP2515 ready.\n");
 }
 
-// ── Loop ──────────────────────────────────────────────────────────────────────
+// ── Loop: transmit all cycles in sequence ─────────────────────────────────────
 void loop() {
+
   Serial.println("=== Cycle 1: BMS Status ===");
   sendMessages(bms_cycle1, sizeof(bms_cycle1) / sizeof(bms_cycle1[0]));
 
   Serial.println("=== Cycle 1: Cell Voltages ===");
   sendMessages(cells_cycle1, sizeof(cells_cycle1) / sizeof(cells_cycle1[0]));
 
-  delay(100);
+  delay(100); // Gap between cycles
 
-  Serial.println("=== Cycle 2: BMS Updates ===");
+  Serial.println("=== Cycle 2: BMS Updates (dynamic) ===");
   sendMessages(bms_cycle2, sizeof(bms_cycle2) / sizeof(bms_cycle2[0]));
 
   delay(100);
 
-  Serial.println("=== Cycle 3: BMS Updates ===");
+  Serial.println("=== Cycle 3: BMS Updates (accelerating) ===");
   sendMessages(bms_cycle3, sizeof(bms_cycle3) / sizeof(bms_cycle3[0]));
 
   Serial.println("=== Cycle 3: Cell Voltage Updates ===");
@@ -148,6 +151,6 @@ void loop() {
   Serial.println("=== Final BMS Update ===");
   sendMessages(bms_final, sizeof(bms_final) / sizeof(bms_final[0]));
 
-  Serial.println("\n--- Sequence complete, repeating in 1s ---\n");
-  delay(1000);
-}
+  Serial.println("\n--- Full sequence complete. Repeating in 1s ---\n");
+  delay(1000); // Pause before looping again
+}*/
