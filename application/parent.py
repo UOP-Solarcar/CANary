@@ -5,7 +5,7 @@ import multiprocessing
 
 if __name__ == '__main__':
     os.system("streamlit run application/dashboard.py")
-    multiprocessing.set_start_method("spawn", force=True) #
+    multiprocessing.set_start_method("spawn", force=True)
     p = multiprocessing.Process(target=serialRcv.serialRcv())
     p.start()
     #os.system("streamlit run application/dashboard.py")
