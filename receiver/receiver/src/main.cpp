@@ -56,8 +56,8 @@ void loop()
     //uint8_t from;
     if (driver.recv(buf, &len));
     {
-      if (buf[0] == 0x4D) Serial.write(buf[1], 12);
-      else Serial.println("Wrong channel")
+      if (buf[0] == 0x4D) Serial.write(&buf[1], 12);
+      else Serial.println("Wrong channel");
     }
   }
 }
