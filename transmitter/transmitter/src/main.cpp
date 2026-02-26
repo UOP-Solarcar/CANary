@@ -8,25 +8,34 @@
  *              https://registry.platformio.org/libraries/epsilonrt/RadioHead/examples/rf95/rf95_reliable_datagram_client/rf95_reliable_datagram_client.pde
  *******************************************************************/
 
-#include <RHReliableDatagram.h>
 #include <RH_RF95.h>
 #include <mcp2515.h>
 #include <SPI.h>
+#include <can.h>
 
-#define CLIENT_ADDRESS 1
-#define SERVER_ADDRESS 2
-
-// ── Feather 32u4 RFM95 hardwired pins ────────────────────────────────────────
+//Feather 32u4 RFM95 hardwired pins
 #define RFM95_CS  8
 #define RFM95_INT 7
 
-// ── MCP2515 CS pin ────────────────────────────────────────────────────────────
+//MCP2515 CS pin
 #define MCP2515_CS 6
+/*
+//interrupt setup
+volatile bool canInterrupt = false;
 
-// ── Object instances ──────────────────────────────────────────────────────────
+void canISR() {
+  canInterrupt = true;
+}
+
+#define CAN_QUEUE_SIZE 16
+
+can_frame canQueue[CAN_QUEUE_SIZE];
+volatile uint8_t head = 0;
+volatile uint8_t tail = 0;
+*/
+//Object instances
 MCP2515 mcp2515(MCP2515_CS);
 RH_RF95 driver(RFM95_CS, RFM95_INT);
-RHReliableDatagram manager(driver, CLIENT_ADDRESS);
 
 void setup() {
   Serial.begin(115200);
@@ -41,20 +50,21 @@ void setup() {
 
   SPI.begin();
 
-  // ── CAN init ────────────────────────────────────────────────────────────────
+  //CAN init
   Serial.print("CAN init... ");
   mcp2515.reset();
   if (mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ) == MCP2515::ERROR_OK) {
     Serial.println("OK");
   } else {
-    Serial.println("FAILED - check MCP2515 wiring, and use MCP_16MHZ if crystal is 16MHz");
+    Serial.println("FAILED");
   }
   mcp2515.setListenOnlyMode();
+  //mcp2515.setRegister(MCP2515::REGISTER::MCP_CANINTE, 0x03); // Enable RX0IE and RX1IE
 
-  // ── LoRa init ───────────────────────────────────────────────────────────────
+  //LoRa init
   Serial.print("LoRa init... ");
-  if (!manager.init()) {
-    Serial.println("FAILED - check RFM95 is seated properly on Feather");
+  if (!driver.init()) {
+    Serial.println("FAILED");
     while (1);
   }
   Serial.println("OK");
@@ -62,31 +72,73 @@ void setup() {
   driver.setTxPower(20, false);
   driver.setCADTimeout(100);
   driver.setFrequency(915.0); // 915MHz for US, change to 868.0 for EU
+  /*
+  // Drain any messages already sitting in the buffer
+  can_frame dummy;
+  while (mcp2515.readMessage(&dummy) == MCP2515::ERROR_OK) {}
 
+  pinMode(3, INPUT_PULLUP);//pin 3 is interrupt pin
+  attachInterrupt(0, canISR, FALLING);//interrupt 0 is mapped to pin 3*/
   Serial.println("Ready.\n");
 }
 
-uint8_t data[12];
+uint8_t data[13];
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
-void loop() {
-  can_frame f;
-  while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
-    Serial.print("CAN RX ID: 0x");
-    Serial.print(f.can_id, HEX);
-    Serial.print(" -> Sending over LoRa... ");
+void loop() {/*
+  if (canInterrupt) {
+    canInterrupt = false;
+    Serial.println("ISR fired!");
+    
+    can_frame f;
+    uint8_t count = 0;
+    while (count < 4 && mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
+      uint8_t next = (head + 1) % CAN_QUEUE_SIZE;
+      if (next != tail) {
+        canQueue[head] = f;
+        head = next;
+      }
+      count++;
+      if(count == 4) canInterrupt = true;
+    }
+  }
 
-    // Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
+  if (tail != head) {
+    can_frame &f = canQueue[tail];
+
+    Serial.print("CAN RX ID: 0x");
+    Serial.println(f.can_id, HEX);
+
     data[0] = (f.can_id >> 24) & 0xFF;
     data[1] = (f.can_id >> 16) & 0xFF;
-    data[2] = (f.can_id >> 8)  & 0xFF;
-    data[3] =  f.can_id        & 0xFF;
+    data[2] = (f.can_id >> 8) & 0xFF;
+    data[3] = f.can_id & 0xFF;
     memcpy(&data[4], f.data, 8);
 
-    if (manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS)) {
+    manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS);
+
+    tail = (tail + 1) % CAN_QUEUE_SIZE;
+  }
+
+  */
+  can_frame f;
+  while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
+    /*Serial.print("CAN RX ID: 0x");
+    Serial.print(f.can_id, HEX);
+    Serial.print(" -> Sending over LoRa... ");*/
+
+    // Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
+    data[0] = 0x4D;
+    data[1] = (f.can_id >> 24) & 0xFF;
+    data[2] = (f.can_id >> 16) & 0xFF;
+    data[3] = (f.can_id >> 8)  & 0xFF;
+    data[4] =  f.can_id        & 0xFF;
+    memcpy(&data[5], f.data, 8);
+
+    if (driver.send(data, sizeof(data))) {
       Serial.println("OK");
     } else {
-      Serial.println("sendtoWait failed");
+      Serial.println("send failed");
     }
   }
 }

@@ -8,7 +8,6 @@
  *              https://registry.platformio.org/libraries/epsilonrt/RadioHead/examples/rf95/rf95_reliable_datagram_client/rf95_reliable_datagram_client.pde
  *******************************************************************/
 
-#include <RHReliableDatagram.h>
 #include <RH_RF95.h>
 #include <SPI.h>
 
@@ -22,10 +21,6 @@
 // Singleton instance of the radio driver
 RH_RF95 driver(RFM95_CS, RFM95_INT);
 
-// Class to manage message delivery and receipt, using the driver declared above
-RHReliableDatagram manager(driver, SERVER_ADDRESS);
-
-
 void setup() 
 {
   Serial.begin(115200); while(!Serial){;}
@@ -35,7 +30,7 @@ void setup()
 
   // ── LoRa init ───────────────────────────────────────────────────────────────
   Serial.print("LoRa init... ");
-  if (!manager.init()) {
+  if (!driver.init()) {
     Serial.println("FAILED - check RFM95 is seated properly on Feather");
     while (1);
   }
@@ -54,14 +49,14 @@ uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
 void loop()
 {
-  if (manager.available())
+  if (driver.available())
   {
     // Wait for a message addressed to us from the client
     uint8_t len = sizeof(buf);
-    uint8_t from;
-    if (manager.recvfromAck(buf, &len, &from))
+    //uint8_t from;
+    if (driver.recv(buf, &len) && buf[0] == 0x4D);
     {
-      Serial.println((char*)buf);
+      Serial.println((char*)buf[1]);
     }
   }
 }
