@@ -56,7 +56,7 @@ void loop()
     //uint8_t from;
     if (driver.recv(buf, &len) && buf[0] == 0x4D);
     {
-      Serial.println((char*)buf[1]);
+      Serial.wri;
     }
   }
 }
