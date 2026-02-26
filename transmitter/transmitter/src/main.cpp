@@ -33,6 +33,13 @@ can_frame canQueue[CAN_QUEUE_SIZE];
 volatile uint8_t head = 0;
 volatile uint8_t tail = 0;
 */
+const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4, 0x36};
+
+uint8_t data[13];
+uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
+uint8_t count = 0;
+
 //Object instances
 MCP2515 mcp2515(MCP2515_CS);
 RH_RF95 driver(RFM95_CS, RFM95_INT);
@@ -82,9 +89,6 @@ void setup() {
   Serial.println("Ready.\n");
 }
 
-uint8_t data[13];
-uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-
 void loop() {/*
   if (canInterrupt) {
     canInterrupt = false;
@@ -123,6 +127,7 @@ void loop() {/*
   */
   can_frame f;
   while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
+    if (f.can_id != IDS[count]) continue;
     /*Serial.print("CAN RX ID: 0x");
     Serial.print(f.can_id, HEX);
     Serial.print(" -> Sending over LoRa... ");*/
@@ -140,5 +145,6 @@ void loop() {/*
     } else {
       Serial.println("send failed");
     }
+    count = (count + 1) % length;
   }
 }

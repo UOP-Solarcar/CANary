@@ -149,5 +149,5 @@ void loop() {
   sendMessages(bms_final, sizeof(bms_final) / sizeof(bms_final[0]));
 
   Serial.println("\n--- Sequence complete, repeating in 1s ---\n");
-  delay(1000);
+  delay(50);
 }

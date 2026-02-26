@@ -51,13 +51,9 @@ void loop()
 {
   if (driver.available())
   {
-    // Wait for a message addressed to us from the client
-    uint8_t len = sizeof(buf);
-    //uint8_t from;
-    if (driver.recv(buf, &len));
+    if (driver.recv(buf, &len) && buf[0] == 0x4D);
     {
-      if (buf[0] == 0x4D) Serial.write(&buf[1], 12);
-      else Serial.println("Wrong channel");
+      Serial.write(&buf[1], 12);
     }
   }
 }
