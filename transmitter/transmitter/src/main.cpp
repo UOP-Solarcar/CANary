@@ -8,6 +8,9 @@
  *              https://registry.platformio.org/libraries/epsilonrt/RadioHead/examples/rf95/rf95_reliable_datagram_client/rf95_reliable_datagram_client.pde
  *******************************************************************/
 
+/*
+Idea: Messages stored into buffer, should represent all IDS. Send transmission with all IDS as one packet.
+*/
 #include <RH_RF95.h>
 #include <mcp2515.h>
 #include <SPI.h>
@@ -33,9 +36,9 @@ can_frame canQueue[CAN_QUEUE_SIZE];
 volatile uint8_t head = 0;
 volatile uint8_t tail = 0;
 */
-const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4, 0x36};
+const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4};
 
-uint8_t data[13];
+uint8_t data[61];
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
 uint8_t count = 0;
@@ -60,12 +63,10 @@ void setup() {
   //CAN init
   Serial.print("CAN init... ");
   mcp2515.reset();
-  if (mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ) == MCP2515::ERROR_OK) {
-    Serial.println("OK");
-  } else {
-    Serial.println("FAILED");
-  }
-  mcp2515.setListenOnlyMode();
+  mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ);
+  mcp2515.setFilterMask(MCP2515::MASK0, false, 0x00000000); // accept all
+  mcp2515.setFilterMask(MCP2515::MASK1, false, 0x00000000); // accept all
+  mcp2515.setNormalMode();
   //mcp2515.setRegister(MCP2515::REGISTER::MCP_CANINTE, 0x03); // Enable RX0IE and RX1IE
 
   //LoRa init
@@ -127,18 +128,22 @@ void loop() {/*
   */
   can_frame f;
   while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
-    if (f.can_id != IDS[count]) continue;
+    if (f.can_id == IDS[count]) {
+      data[(count*12) + 1] = (f.can_id >> 24) & 0xFF;
+      data[(count*12) + 2] = (f.can_id >> 16) & 0xFF;
+      data[(count*12) + 3] = (f.can_id >> 8)  & 0xFF;
+      data[(count*12) + 4] =  f.can_id        & 0xFF;
+      memcpy(&data[(count*12) + 5], f.data, 8);
+      count = (count + 1);
+      if (count == length) count = 0;
+      else continue;
+    } else continue;
     /*Serial.print("CAN RX ID: 0x");
     Serial.print(f.can_id, HEX);
     Serial.print(" -> Sending over LoRa... ");*/
 
     // Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
     data[0] = 0x4D;
-    data[1] = (f.can_id >> 24) & 0xFF;
-    data[2] = (f.can_id >> 16) & 0xFF;
-    data[3] = (f.can_id >> 8)  & 0xFF;
-    data[4] =  f.can_id        & 0xFF;
-    memcpy(&data[5], f.data, 8);
 
     if (driver.send(data, sizeof(data))) {
       Serial.println("OK");

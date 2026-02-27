@@ -130,12 +130,12 @@ void loop() {
   Serial.println("=== Cycle 1: Cell Voltages ===");
   sendMessages(cells_cycle1, sizeof(cells_cycle1) / sizeof(cells_cycle1[0]));
 
-  delay(100);
+  //delay(100);
 
   Serial.println("=== Cycle 2: BMS Updates ===");
   sendMessages(bms_cycle2, sizeof(bms_cycle2) / sizeof(bms_cycle2[0]));
 
-  delay(100);
+  //delay(100);
 
   Serial.println("=== Cycle 3: BMS Updates ===");
   sendMessages(bms_cycle3, sizeof(bms_cycle3) / sizeof(bms_cycle3[0]));
@@ -143,11 +143,11 @@ void loop() {
   Serial.println("=== Cycle 3: Cell Voltage Updates ===");
   sendMessages(cells_cycle3, sizeof(cells_cycle3) / sizeof(cells_cycle3[0]));
 
-  delay(100);
+  //delay(100);
 
   Serial.println("=== Final BMS Update ===");
   sendMessages(bms_final, sizeof(bms_final) / sizeof(bms_final[0]));
 
   Serial.println("\n--- Sequence complete, repeating in 1s ---\n");
-  delay(50);
+  //delay(50);
 }
