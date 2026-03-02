@@ -53,7 +53,7 @@ void loop()
   {
     if (driver.recv(buf, &len) && buf[0] == 0x4D);
     {
-      Serial.write(&buf[1], 12);
+      Serial.write(&buf[1], 60);
     }
   }
 }
