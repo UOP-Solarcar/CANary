@@ -37,11 +37,12 @@ volatile uint8_t head = 0;
 volatile uint8_t tail = 0;
 */
 const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4};
+const uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
 
 uint8_t data[61];
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
 uint8_t count = 0;
+bool id_check[length] = {false};
 
 //Object instances
 MCP2515 mcp2515(MCP2515_CS);
@@ -128,21 +129,25 @@ void loop() {/*
   */
   can_frame f;
   while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
-    if (f.can_id == IDS[count]) {
-      data[(count*12) + 1] = (f.can_id >> 24) & 0xFF;
-      data[(count*12) + 2] = (f.can_id >> 16) & 0xFF;
-      data[(count*12) + 3] = (f.can_id >> 8)  & 0xFF;
-      data[(count*12) + 4] =  f.can_id        & 0xFF;
-      memcpy(&data[(count*12) + 5], f.data, 8);
-      count = (count + 1);
-      if (count == length) count = 0;
-      else continue;
-    } else continue;
+    for (int i = 0; i < length; i++) {
+      if (!id_check[i] && IDS[i] == f.can_id) {
+        data[(i*12) + 1] = (f.can_id >> 24) & 0xFF;
+        data[(i*12) + 2] = (f.can_id >> 16) & 0xFF;
+        data[(i*12) + 3] = (f.can_id >> 8)  & 0xFF;
+        data[(i*12) + 4] =  f.can_id        & 0xFF;
+        memcpy(&data[(i*12) + 5], f.data, 8);
+        id_check[i] = true;
+        count = (count + 1);
+      }
+    }
+    if (count == length) count = 0;
+    else continue;
     /*Serial.print("CAN RX ID: 0x");
     Serial.print(f.can_id, HEX);
     Serial.print(" -> Sending over LoRa... ");*/
 
     // Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
+    for (int i = 0; i < length; i++) id_check[i] = false;
     data[0] = 0x4D;
 
     if (driver.send(data, sizeof(data))) {
@@ -150,6 +155,5 @@ void loop() {/*
     } else {
       Serial.println("send failed");
     }
-    count = (count + 1) % length;
   }
 }
