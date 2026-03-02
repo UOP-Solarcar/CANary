@@ -43,7 +43,7 @@ void setup()
   Serial.println("Ready.\n");
 }
 
-uint8_t data[12];
+uint8_t data[61];
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 
