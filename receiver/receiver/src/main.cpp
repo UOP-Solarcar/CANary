@@ -46,6 +46,7 @@ void setup()
 uint8_t data[61];
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+uint8_t len = 60;
 
 void loop()
 {
