@@ -1,0 +1,133 @@
+# UOP Solar Car Team 777 - Realistic CAN Bus Data
+# Scenario: Formula Sun Grand Prix Race - Lap 15/20, Battery at 65% SOC
+# System: 24S12P Samsung INR21700-50S (86.4V nominal, 100.8V max)
+# Motor: CL700 VESC-based controller (126V rated, 350A battery current)
+# Time: Mid-afternoon, moderate solar input (~600W), moderate power demand
+
+# === BMS STATUS MESSAGES (Orion 2 BMS) ===
+# Pack is discharging moderately, cells well-balanced, temps climbing slightly
+
+# 0x6B0: Pack Current, Voltage, SOC, Relay State
+0x6B0 E8 03 56 24 41 00 03 C5    # -24A discharge, 89.94V, 65% SOC, relays closed
+0x6B1 00 FA 00 4B 2F 24 00 D8    # DCL: 250A, CCL: 75A, High: 47°C, Low: 36°C
+0x6B2 0F FA 0B 0F E6 13 00 E2    # High cell: 4090mV (cell 11), Low: 4070mV (cell 19)
+0x6B3 2F 0B 24 13 2A 2D E1 00    # Temp: High 47°C (11), Low 36°C (19), Avg 42°C, Internal 45°C
+0x6B4 01 EA 5C 2E 70 00 00 F3    # Health: Normal, Capacity: 59.5Ah remaining, 12V supply good
+
+# Individual Cell Voltages (24S configuration)
+# Module 1 (Cells 1-12) - Front of pack, slightly cooler
+0x36 01 0F FA 00 28 0F F0 E5    # Cell 1: 4090mV, 40mΩ, OCV 4080mV
+0x36 02 0F F8 00 29 0F EE E6    # Cell 2: 4088mV, 41mΩ, OCV 4078mV
+0x36 03 0F FB 00 27 0F F1 E7    # Cell 3: 4091mV, 39mΩ, OCV 4081mV
+0x36 04 0F F9 00 28 0F EF E8    # Cell 4: 4089mV, 40mΩ, OCV 4079mV
+0x36 05 0F FC 00 29 0F F2 E9    # Cell 5: 4092mV, 41mΩ, OCV 4082mV
+0x36 06 0F FA 00 28 0F F0 EA    # Cell 6: 4090mV, 40mΩ, OCV 4080mV
+0x36 07 0F F7 00 27 0F ED EB    # Cell 7: 4087mV, 39mΩ, OCV 4077mV
+0x36 08 0F FB 00 28 0F F1 EC    # Cell 8: 4091mV, 40mΩ, OCV 4081mV
+0x36 09 0F F8 00 29 0F EE ED    # Cell 9: 4088mV, 41mΩ, OCV 4078mV
+0x36 0A 0F F9 00 27 0F EF EE    # Cell 10: 4089mV, 39mΩ, OCV 4079mV
+0x36 0B 0F FA 00 28 0F F0 EF    # Cell 11: 4090mV, 40mΩ, OCV 4080mV
+0x36 0C 0F F6 00 29 0F EC F0    # Cell 12: 4086mV, 41mΩ, OCV 4076mV
+
+# Module 2 (Cells 13-24) - Rear of pack, warmer from motor heat
+0x36 0D 0F F4 00 2A 0F EA F1    # Cell 13: 4084mV, 42mΩ, OCV 4074mV
+0x36 0E 0F F2 00 2B 0F E8 F2    # Cell 14: 4082mV, 43mΩ, OCV 4072mV
+0x36 0F 0F F5 00 2A 0F EB F3    # Cell 15: 4085mV, 42mΩ, OCV 4075mV
+0x36 10 0F F3 00 2B 0F E9 F4    # Cell 16: 4083mV, 43mΩ, OCV 4073mV
+0x36 11 0F F1 00 2C 0F E7 F5    # Cell 17: 4081mV, 44mΩ, OCV 4071mV
+0x36 12 0F F4 00 2A 0F EA F6    # Cell 18: 4084mV, 42mΩ, OCV 4074mV
+0x36 13 0F E6 00 2B 0F DC F7    # Cell 19: 4070mV, 43mΩ, OCV 4060mV (lowest)
+0x36 14 0F F0 00 2C 0F E6 F8    # Cell 20: 4080mV, 44mΩ, OCV 4070mV
+0x36 15 0F F2 00 2A 0F E8 F9    # Cell 21: 4082mV, 42mΩ, OCV 4072mV
+0x36 16 0F EE 00 2B 0F E4 FA    # Cell 22: 4078mV, 43mΩ, OCV 4068mV
+0x36 17 0F F1 00 2C 0F E7 FB    # Cell 23: 4081mV, 44mΩ, OCV 4071mV
+0x36 18 0F EF 00 2A 0F E5 FC    # Cell 24: 4079mV, 42mΩ, OCV 4069mV
+
+# === MOTOR CONTROLLER STATUS (CL700 VESC) ===
+# Single rear-wheel drive motor, moderate power demand for cruising speed
+
+0x80000901 00 00 13 88 00 18 00 C8    # Status 1: RPM: 5000, Current: 24A, Duty: 200 (39%)
+0x80000E01 00 00 2C E0 00 00 15 E0    # Status 2: Ah Used: 11.5Ah, Ah Charged: 5.6Ah
+0x80000F01 00 02 49 F0 00 01 1F 40    # Status 3: Wh Used: 150kWh, Wh Charged: 73kWh
+0x80001001 00 37 00 3E 00 18 00 00    # Status 4: FET: 55°C, Motor: 62°C, Input: 24A, PID: 0
+0x80001B01 00 04 93 E0 00 5A 00 00    # Status 5: Tachometer: 300,000, Input Voltage: 90V
+0x80003A01 01 F4 02 10 01 FC 03 E8    # Status 6: ADC1: 500, ADC2: 528, ADC3: 508, PPM: 1000
+
+# === SOLAR ARRAY & MPPT DATA ===
+# Array producing ~600W (partial cloud cover), MPPT stepping down from ~159V to battery
+
+# Note: MPPT data would typically be on a different CAN ID (manufacturer specific)
+# Simulating as 0x600 series for demonstration
+0x600 00 9F 00 03 75 00 25 80 B4    # Solar: 159V, 3.77A, ~600W input
+0x601 00 5A 00 18 00 02 58 00 C2    # MPPT Out: 90V, 24A charging (solar contribution)
+
+# === Second Data Cycle (2 seconds later, slightly increased load) ===
+
+0x6B0 F4 03 56 22 41 00 03 C7    # -28A discharge, 89.90V, 65% SOC
+0x6B1 00 FA 00 4B 30 24 00 D9    # DCL: 250A, CCL: 75A, High: 48°C, Low: 36°C
+0x6B2 0F F8 0B 0F E4 13 00 E4    # High cell: 4088mV (11), Low: 4068mV (19)
+0x6B3 30 0B 24 13 2B 2E E2 00    # Temp: High 48°C (11), Low 36°C (19), Avg 43°C, Int 46°C
+0x6B4 01 EA 5C 2E 6F 00 00 F2    # Health: Normal, Capacity: 59.5Ah
+
+# Motor controller with slightly higher load
+0x80000901 00 00 14 B4 00 1C 00 D2    # Status 1: RPM: 5300, Current: 28A, Duty: 210 (41%)
+0x80001001 00 38 00 3F 00 1C 00 00    # Status 4: FET: 56°C, Motor: 63°C, Input: 28A
+0x80001B01 00 04 98 80 00 5A 00 00    # Status 5: Tachometer: 301,200
+
+# === Third Data Cycle (Corner exit, higher power demand) ===
+
+0x6B0 D0 03 56 1E 41 00 03 CB    # -48A discharge, 89.82V, 65% SOC
+0x6B1 00 FA 00 4B 31 25 00 DA    # DCL: 250A, CCL: 75A, High: 49°C, Low: 37°C
+0x6B2 0F F6 0B 0F E2 13 00 E6    # High cell: 4086mV (11), Low: 4066mV (19)
+0x6B3 31 0B 25 13 2C 2F E3 00    # Temp: High 49°C (11), Low 37°C (19), Avg 44°C, Int 47°C
+0x6B4 01 EA 5C 2E 6E 00 00 F1    # Health: Normal
+
+# Motor controller under acceleration
+0x80000901 00 00 17 70 00 30 00 FA    # Status 1: RPM: 6000, Current: 48A, Duty: 250 (49%)
+0x80001001 00 3A 00 42 00 30 00 00    # Status 4: FET: 58°C, Motor: 66°C, Input: 48A
+0x80001B01 00 04 A6 00 00 59 00 00    # Status 5: Tachometer: 304,640, Voltage: 89V
+
+# Solar input remains steady
+0x600 00 9E 00 03 7A 00 25 80 B6    # Solar: 158V, 3.78A, ~597W
+
+# === Fourth Data Cycle (Straightaway cruising, lower power) ===
+
+0x6B0 FC 03 56 26 41 00 03 C3    # -16A discharge, 89.98V, 65% SOC (recovering)
+0x6B1 00 FA 00 4B 30 24 00 D9    # DCL: 250A, CCL: 75A, High: 48°C, Low: 36°C
+0x6B2 0F F9 0B 0F E5 13 00 E3    # High cell: 4089mV (11), Low: 4069mV (19)
+0x6B3 30 0B 24 13 2B 2E E2 00    # Temps stabilizing
+0x6B4 01 EA 5C 2E 6F 00 00 F2    # Health: Normal
+
+# Motor controller light load
+0x80000901 00 00 11 94 00 14 00 B4    # Status 1: RPM: 4500, Current: 20A, Duty: 180 (35%)
+0x80001001 00 36 00 3D 00 14 00 00    # Status 4: FET: 54°C, Motor: 61°C, Input: 20A
+0x80001B01 00 04 AA A0 00 5A 00 00    # Status 5: Tachometer: 305,824
+
+# Updated energy counters
+0x80000E01 00 00 2C F8 00 00 16 20    # Status 2: Ah Used: 11.51Ah, Ah Charged: 5.66Ah
+0x80000F01 00 02 4A 50 00 01 1F E0    # Status 3: Wh Used: 150.1kWh, Wh Charged: 73.2kWh
+
+# === Fifth Data Cycle (Pit approach, regenerative braking) ===
+
+0x6B0 28 03 56 2C 40 00 03 BB    # +40A charging (regen!), 90.12V, 64% SOC
+0x6B1 00 FA 00 4B 2F 24 00 D8    # DCL: 250A, CCL: 75A, temps cooling
+0x6B2 0F FB 0B 0F E7 13 00 E1    # Cells rising: High: 4091mV, Low: 4071mV
+0x6B3 2F 0B 24 13 2A 2D E1 00    # Temps: High 47°C, Low 36°C
+0x6B4 01 EA 5C 2E 70 00 00 F3    # Health: Normal
+
+# Motor controller in regen mode (negative current)
+0x80000901 00 00 0C E4 FF D8 FF 6E    # Status 1: RPM: 3300, Current: -40A (regen), Duty: -146
+0x80001001 00 34 00 3A FF D8 00 00    # Status 4: FET: 52°C, Motor: 58°C, Input: -40A
+0x80001B01 00 04 AF 40 00 5A 00 00    # Status 5: Tachometer: 306,496
+
+# Regen energy captured
+0x80000E01 00 00 2C F8 00 00 16 40    # Ah Charged increasing: 5.70Ah
+0x80000F01 00 02 4A 50 00 01 20 20    # Wh Charged: 73.76kWh
+
+# Solar still contributing
+0x600 00 9D 00 03 7C 00 25 40 B8    # Solar: 157V, 3.80A, ~596W
+
+# Some updated cell voltages showing charging effect
+0x36 01 0F FC 00 27 0F F2 E7    # Cell 1: 4092mV (rising from charging)
+0x36 0B 0F FC 00 27 0F F2 F1    # Cell 11: 4092mV
+0x36 13 0F E7 00 2A 0F DD F9    # Cell 19: 4071mV (was lowest, now rising)
