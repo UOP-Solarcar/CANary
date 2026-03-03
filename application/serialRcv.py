@@ -51,14 +51,57 @@ def read_frame(ser):
         if not b:
             return None
         payload.append(b[0])
-    return (hex(msg_id), payload)
+    return (buffer, payload)    #if broke, change to hex(msg_id)
+
+def naturalizeData(msg_id, data):
+    msg_id_value = int.from_bytes(msg_id[2:], byteorder = 'big')
+    ID = MESSAGE_ID(msg_id_value)
+    ID = ID.name
+
+    if ID == 'BASIC':
+        pack_current = int.from_bytes(data[0:2], signed=True, byteorder='big')  # signed int, have to specify so method performs two's comp to decode
+        pack_inst_voltage = int.from_bytes(data[2:4], signed=False, byteorder='big')
+        pack_soc = int.from_bytes(data[4], signed=False, byteorder='big')
+        relay_state = int.from_bytes(data[5:7], signed=False, byteorder='big')
+        checksum = int.from_bytes(data[7], signed=False, byteorder='big')
+        return [pack_current, pack_inst_voltage, pack_soc, relay_state, checksum]
+    elif ID == 'BMS_TEMP':
+        pack_dcl = int.from_bytes(data[0:2], signed=False, byteorder='big')
+        pack_ccl = int.from_bytes(data[2:4], signed=False, byteorder='big')
+        high_temp = int.from_bytes(data[4], signed=False, byteorder='big')
+        low_temp = int.from_bytes(data[5], signed=False, byteorder='big')
+        checksum = int.from_bytes(data[6], signed=False, byteorder='big')
+    elif ID == 'STRINGS':
+        high_cell_voltage = int.from_bytes(data[0:2], signed=False, byteorder='big')
+        high_cell_voltage_id = int.from_bytes(data[2], signed=False, byteorder='big')
+        low_cell_voltage = int.from_bytes(data[3:5], signed=False, byteorder='big')
+        low_cell_voltage_id = int.from_bytes(data[5], signed=False, byteorder='big')
+        checksum = int.from_bytes(data[6], signed=False, byteorder='big')
+
 
 def serialRcv():
     while True:
         frame = read_frame(ser)
         if frame:
-            print("Received frame --> MSG_ID: ", frame[0], ": ", frame[1].hex())
+            print("Received frame --> MSG_ID: ", frame[0][2:].hex(), ": ", frame[1].hex())
+            #naturalizeData(frame[0], frame[1])
             #print("Received frame:", frame.decode(encoding='utf-8'))
+            f = open('data.csv', 'a')
+            count = 0
+            for byte in frame[0]:
+                if count == 3:
+                    f.write(str(byte))
+                f.write(str(byte) + ',')
+                count + 1
+            count = 0
+            for byte in frame[1]:
+                if count == 7:
+                    f.write(str(byte))
+                else:
+                    f.write(str(byte) + ',')
+                    count = count + 1
+            f.write('\n')
+            f.close()
         else:
             print("No data in frame")
 
