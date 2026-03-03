@@ -3,41 +3,27 @@ import streamlit as st
 import multiprocessing
 import numpy as np
 import pandas as pd
+from numpy.random import default_rng as rng
 
-def dashboardStart():
-    with elements("dashboard"):
+df = pd.DataFrame(rng(0).standard_normal((20, 3)), columns=["a", "b", "c"])
 
-        # You can create a draggable and resizable dashboard using
-        # any element available in Streamlit Elements.
+st.set_page_config(layout="wide")
+# Columns
+col1, col2 = st.columns([3,2])
+with col1:
+    st.line_chart(df)
+    st.line_chart(df)
+with col2:
+    st.dataframe(df)
+    st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
 
-        from streamlit_elements import dashboard
+# Tabs
+tab1, tab2 = st.tabs(["Chart", "Data"])
 
-        # First, build a default layout for every element you want to include in your dashboard
+# Expander
+with st.expander("See details"):
+    st.write("Hidden content")
 
-        layout = [
-            # Parameters: element_identifier, x_pos, y_pos, width, height, [item properties...]
-            dashboard.Item("first_item", 0, 0, 2, 2),
-            dashboard.Item("second_item", 2, 0, 2, 2, isDraggable=False, moved=False),
-            dashboard.Item("third_item", 0, 2, 1, 1, isResizable=False),
-        ]
-
-        # Next, create a dashboard layout using the 'with' syntax. It takes the layout
-        # as first parameter, plus additional properties you can find in the GitHub links below.
-
-        with dashboard.Grid(layout):
-            mui.Paper("First item", key="first_item")
-            mui.Paper("Second item (cannot drag)", key="second_item")
-            mui.Paper("Third item (cannot resize)", key="third_item")
-
-        # If you want to retrieve updated layout values as the user move or resize dashboard items,
-        # you can pass a callback to the onLayoutChange event parameter.
-
-        def handle_layout_change(updated_layout):
-            # You can save the layout in a file, or do anything you want with it.
-            # You can pass it back to dashboard.Grid() if you want to restore a saved layout.
-            print(updated_layout)
-
-        with dashboard.Grid(layout, onLayoutChange=handle_layout_change):
-            mui.Paper("First item", key="first_item")
-            mui.Paper("Second item (cannot drag)", key="second_item")
-            mui.Paper("Third item (cannot resize)", key="third_item")
+# Container
+with st.container():
+    st.write("Grouped content")
