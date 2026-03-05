@@ -1,29 +1,13 @@
-from streamlit_elements import elements, mui, html
+from datetime import datetime
 import streamlit as st
-import multiprocessing
-import numpy as np
 import pandas as pd
 from numpy.random import default_rng as rng
 
-df = pd.DataFrame(rng(0).standard_normal((20, 3)), columns=["a", "b", "c"])
+pg = st.navigation([
+    st.Page("pages/home_page.py", title="Home Page"),
+    st.Page("pages/live_data_page.py", title="Live Data Page"),
+    st.Page("pages/static_data_page.py", title="Static Data Page")
+])
 
-st.set_page_config(layout="wide")
-# Columns
-col1, col2 = st.columns([3,2])
-with col1:
-    st.line_chart(df)
-    st.line_chart(df)
-with col2:
-    st.dataframe(df)
-    st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
+pg.run()
 
-# Tabs
-tab1, tab2 = st.tabs(["Chart", "Data"])
-
-# Expander
-with st.expander("See details"):
-    st.write("Hidden content")
-
-# Container
-with st.container():
-    st.write("Grouped content")
