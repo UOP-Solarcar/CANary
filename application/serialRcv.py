@@ -120,10 +120,10 @@ def writeData(actual_data):
 def serialRcv():
     f = open('data.csv', 'w')
     f.write("BASIC,pack_current,pack_inst_voltage,pack_soc,relay_state,checksum," \
-           "BMS_TEMP,pack_dcl,pack_ccl,high_temp,low_temp,checksum," \
+           "BMS_TEMP,pack_dcl,pack_ccl,BMS_high_temp,BMS_low_temp,checksum," \
            "STRINGS,high_cell_voltage,high_cell_voltage_id,low_cell_voltage,low_cell_voltage_id,checksum," \
-           "BATTERY_TEMP,high_temp,high_thermistor_id,low_temp,low_thermistor_id,avg_temp,internal_temp,checksum," \
-           "HEALTH,pack_health,adaptive_total_capacity,input_supply_voltage,checksum" \
+           "BATTERY_TEMP,cell_high_temp,high_thermistor_id,cell_low_temp,low_thermistor_id,avg_temp,internal_temp,checksum," \
+           "HEALTH,pack_health,adaptive_total_capacity,input_supply_voltage,checksum," \
            "CELL,cell_id,instant_voltage,internal_resistance,open_voltage,checksum\n")
     f.close()
     
