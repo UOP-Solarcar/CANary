@@ -1,6 +1,7 @@
 import serial
 import os
-from enum import Enum 
+from enum import Enum
+from datetime import datetime
 
 if (os.name == "posix"): # sets the serial port
     PORT = "/dev/tty.usbmodem21101"
@@ -119,6 +120,7 @@ def writeData(actual_data):
 
 def serialRcv():
     f = open('data.csv', 'w')
+    f.write("Timestamp,")
     f.write("BASIC,pack_current,pack_inst_voltage,pack_soc,relay_state,checksum," \
            "BMS_TEMP,pack_dcl,pack_ccl,BMS_high_temp,BMS_low_temp,checksum," \
            "STRINGS,high_cell_voltage,high_cell_voltage_id,low_cell_voltage,low_cell_voltage_id,checksum," \
@@ -136,6 +138,7 @@ def serialRcv():
             print(frame[1])
             actual_data = naturalizeData(frame[0], frame[1])
             f = open('data.csv', 'a')
+            f.write(str(datetime.now()) + ',')
             f.write(actual_data[0] + ',')
             for data in actual_data[1:]:
                 f.write(str(data) + ',')
