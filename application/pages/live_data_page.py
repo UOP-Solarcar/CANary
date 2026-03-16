@@ -16,11 +16,11 @@ def new_time():
 
 @st.fragment(run_every=2)
 def soc_chart():
-    st.line_chart(df)
+    st.line_chart(df['pack_soc'],x_label="time",y_label="SOC")
 
 @st.fragment(run_every=2)
 def speed_chart():
-    st.line_chart(df)
+    st.line_chart(df[['cell_high_temp','cell_low_temp','avg_temp']],x_label="time",y_label="Temperature (C)")
 
 @st.fragment(run_every=2)
 def table():
