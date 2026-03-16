@@ -4,8 +4,11 @@ import numpy as np
 import pandas as pd
 from numpy.random import default_rng as rng
 
-df = pd.DataFrame(rng(0).standard_normal((20, 3)), columns=["a", "b", "c"])
+df = pd.read_csv("data.csv")
 
+@st.fragment(run_every=1)
+def update_data():
+    df = pd.read_csv("data.csv")
 
 @st.fragment(run_every=1)
 def new_time():
@@ -21,7 +24,7 @@ def speed_chart():
 
 @st.fragment(run_every=2)
 def table():
-    st.dataframe(df)
+    st.dataframe(df[['pack_current',"pack_inst_voltage","pack_soc","relay_state","pack_dcl","pack_ccl","BMS_high_temp","BMS_low_temp","high_cell_voltage","high_cell_voltage_id","low_cell_voltage","low_cell_voltage_id","cell_high_temp","high_thermistor_id","cell_low_temp","low_thermistor_id","avg_temp","internal_temp","pack_health","adaptive_total_capacity","input_supply_voltage","cell_id","instant_voltage","internal_resistance","open_voltage"]])
 
 @st.fragment(run_every=5)
 def text_status():
