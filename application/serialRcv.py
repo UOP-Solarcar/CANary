@@ -120,13 +120,12 @@ def writeData(actual_data):
 
 def serialRcv():
     f = open('data.csv', 'w')
-    f.write("Timestamp,")
     f.write("BASIC,pack_current,pack_inst_voltage,pack_soc,relay_state,checksum," \
            "BMS_TEMP,pack_dcl,pack_ccl,BMS_high_temp,BMS_low_temp,checksum," \
            "STRINGS,high_cell_voltage,high_cell_voltage_id,low_cell_voltage,low_cell_voltage_id,checksum," \
            "BATTERY_TEMP,cell_high_temp,high_thermistor_id,cell_low_temp,low_thermistor_id,avg_temp,internal_temp,checksum," \
            "HEALTH,pack_health,adaptive_total_capacity,input_supply_voltage,checksum," \
-           "CELL,cell_id,instant_voltage,internal_resistance,open_voltage,checksum\n")
+           "CELL,cell_id,instant_voltage,internal_resistance,open_voltage,checksum,timestamp\n")
     f.close()
     
     
@@ -138,13 +137,12 @@ def serialRcv():
             print(frame[1])
             actual_data = naturalizeData(frame[0], frame[1])
             f = open('data.csv', 'a')
-            f.write(str(datetime.now()) + ',')
             f.write(actual_data[0] + ',')
             for data in actual_data[1:]:
                 f.write(str(data) + ',')
             count = count + 1
             if (count == 5):
-                f.write('\n')
+                f.write(str(datetime.now())+ '\n')
                 count = 0
 
             
