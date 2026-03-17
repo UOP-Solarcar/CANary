@@ -10,7 +10,7 @@ df = pd.read_csv("data.csv")
 def soc_update_data(file) -> pd.DataFrame:
     df_raw = pd.read_csv(file, header=0)
 
-    df = df_raw[["timestamp","pack_soc"]].copy()
+    df = df_raw.iloc[:, [31, 3]].copy()
     df.columns = ["timestamp", "pack_soc"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -22,9 +22,8 @@ def soc_update_data(file) -> pd.DataFrame:
 
 def temp_update_data(file) -> pd.DataFrame:
     df_raw = pd.read_csv(file, header=0)
-    st.write(df_raw.iloc[:5, 19:28])
-    df = df_raw[["timestamp", "cell_high_temp", "cell_low_temp", "avg_temp"]].copy()
-    df.columns = ["timestamp", "high_temp","low_temp","avg_temp"]
+    df = df_raw.iloc[:, [31, 19, 21, 23]].copy()
+    df.columns = ["timestamp", "high_temp", "low_temp", "avg_temp"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["high_temp"] = pd.to_numeric(df["high_temp"], errors="coerce")
@@ -64,9 +63,6 @@ def soc_chart():
 
 @st.fragment(run_every=2)
 def temp_chart():
-    df_test = temp_update_data("data.csv")
-    st.write(df_test.head())  # Add this
-    st.write(df_test.dtypes)  # And this
     base = alt.Chart(temp_update_data("data.csv")).encode(
         x=alt.X("timestamp:T", title="Time", axis=alt.Axis(format="%H:%M:%S")),
         y=alt.Y("temperature:Q", title="Temperature (°C)", scale=alt.Scale(domain=[0, 65])),
