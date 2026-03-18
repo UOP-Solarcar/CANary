@@ -10,7 +10,7 @@ df = pd.read_csv("data.csv")
 def soc_update_data(file) -> pd.DataFrame:
     df_raw = pd.read_csv(file, header=0)
 
-    df = df_raw.iloc[:, [31, 3]].copy()
+    df = df_raw[["timestamp", "pack_soc"]].copy()
     df.columns = ["timestamp", "pack_soc"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -22,7 +22,7 @@ def soc_update_data(file) -> pd.DataFrame:
 
 def temp_update_data(file) -> pd.DataFrame:
     df_raw = pd.read_csv(file, header=0)
-    df = df_raw.iloc[:, [31, 19, 21, 23]].copy()
+    df = df_raw[["timestamp", "cell_high_temp", "cell_low_temp", "avg_temp"]].copy()
     df.columns = ["timestamp", "high_temp", "low_temp", "avg_temp"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -81,8 +81,8 @@ def temp_chart():
 
 @st.fragment(run_every=1)
 def table():
-    df = pd.read_csv("data.csv").sort_values("timestamp").reset_index(drop=True)
-    st.dataframe(df[["pack_current","pack_inst_voltage","pack_soc","relay_state","pack_dcl","pack_ccl","BMS_high_temp","BMS_low_temp","high_cell_voltage","high_cell_voltage_id","low_cell_voltage","low_cell_voltage_id","cell_high_temp","high_thermistor_id","cell_low_temp","low_thermistor_id","avg_temp","internal_temp","pack_health","adaptive_total_capacity","input_supply_voltage","cell_id","instant_voltage","internal_resistance","open_voltage"]])
+    df = pd.read_csv("data.csv").sort_values("timestamp", ascending=False).reset_index(drop=True)
+    st.dataframe(df[["timestamp","pack_current","pack_inst_voltage","pack_soc","relay_state","pack_dcl","pack_ccl","BMS_high_temp","BMS_low_temp","high_cell_voltage","high_cell_voltage_id","low_cell_voltage","low_cell_voltage_id","cell_high_temp","high_thermistor_id","cell_low_temp","low_thermistor_id","avg_temp","internal_temp","pack_health","adaptive_total_capacity","input_supply_voltage","cell_id","instant_voltage","internal_resistance","open_voltage"]])
 
 @st.fragment(run_every=5)
 def text_status():

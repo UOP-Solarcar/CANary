@@ -2,11 +2,11 @@ import serial
 import os
 from enum import Enum
 from datetime import datetime
+import serial.tools.list_ports
 
-if (os.name == "posix"): # sets the serial port
-    PORT = "/dev/tty.usbmodem21101"
-elif (os.name == "nt"):
-    PORT = "COM3"
+for port in serial.tools.list_ports.comports():
+    if port.hwid.__contains__("PID=239A:800C"):
+        PORT = port.device
 
 BAUD = 115200          # rate of transmission in bps
 
