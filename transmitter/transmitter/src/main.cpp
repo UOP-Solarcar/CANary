@@ -36,10 +36,10 @@ can_frame canQueue[CAN_QUEUE_SIZE];
 volatile uint8_t head = 0;
 volatile uint8_t tail = 0;
 */
-const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4};
+const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4, 0x36};
 const uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
 
-uint8_t data[61];
+uint8_t data[length*12 + 1];
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t count = 0;
 bool id_check[length] = {false};

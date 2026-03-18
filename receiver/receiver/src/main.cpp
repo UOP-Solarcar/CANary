@@ -43,10 +43,10 @@ void setup()
   Serial.println("Ready.\n");
 }
 
-uint8_t data[61];
+uint8_t data[73];
 // Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-uint8_t len = 60;
+uint8_t len = 72;
 
 void loop()
 {
@@ -54,7 +54,7 @@ void loop()
   {
     if (driver.recv(buf, &len) && buf[0] == 0x4D);
     {
-      Serial.write(&buf[1], 60);
+      Serial.write(&buf[1], len);
     }
   }
 }
