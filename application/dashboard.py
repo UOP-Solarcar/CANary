@@ -1,7 +1,4 @@
-from datetime import datetime
 import streamlit as st
-import pandas as pd
-from numpy.random import default_rng as rng
 
 pg = st.navigation([
     st.Page("pages/home_page.py", title="Home Page"),

@@ -4,6 +4,17 @@ import altair as alt
 import numpy as np
 import pandas as pd
 from numpy.random import default_rng as rng
+from multiprocessing import Process
+import serialRcv
+
+def start_serial_process():
+    p = Process(target=serialRcv.serialRcv)
+    p.daemon = True
+    p.start()
+    return p
+
+if "serial_process" not in st.session_state:
+    st.session_state.serial_process = start_serial_process()
 
 df = pd.read_csv("data.csv")
 

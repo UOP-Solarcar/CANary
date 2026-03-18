@@ -5,7 +5,7 @@ from datetime import datetime
 import serial.tools.list_ports
 
 for port in serial.tools.list_ports.comports():
-    if port.hwid.__contains__("PID=239A:800C"):
+    if port.hwid.__contains__("PID=239A:800C"):#This only works for adafruit feather 32u4 boards, if hardware is swapped id must change
         PORT = port.device
 
 BAUD = 115200          # rate of transmission in bps
