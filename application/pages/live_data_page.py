@@ -81,12 +81,13 @@ def temp_chart():
 
 @st.fragment(run_every=1)
 def table():
-    df = pd.read_csv("data.csv")
+    df = pd.read_csv("data.csv").sort_values("timestamp").reset_index(drop=True)
     st.dataframe(df[["pack_current","pack_inst_voltage","pack_soc","relay_state","pack_dcl","pack_ccl","BMS_high_temp","BMS_low_temp","high_cell_voltage","high_cell_voltage_id","low_cell_voltage","low_cell_voltage_id","cell_high_temp","high_thermistor_id","cell_low_temp","low_thermistor_id","avg_temp","internal_temp","pack_health","adaptive_total_capacity","input_supply_voltage","cell_id","instant_voltage","internal_resistance","open_voltage"]])
 
 @st.fragment(run_every=5)
 def text_status():
-    st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
+    st.markdown('''Battery Good''')
+    #st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
 
 
 

@@ -6,12 +6,12 @@ from numpy.random import default_rng as rng
 
 df = pd.DataFrame(rng(0).standard_normal((20, 3)), columns=["a", "b", "c"])
 
-'''@st.dialog("Enter Session Name")
-def vote(item):
-    st.write(f"Why is {item} your favorite?")
-    reason = st.text_input("Because...")
-    if st.button("Submit"):
-        st.session_state.vote = {"item": item, "reason": reason}'''
+#@st.dialog("Enter Session Name")
+#def vote(item):
+#    st.write(f"Why is {item} your favorite?")
+#    reason = st.text_input("Because...")
+#    if st.button("Submit"):
+#        st.session_state.vote = {"item": item, "reason": reason}
 
 @st.fragment(run_every=1)
 def new_time():
