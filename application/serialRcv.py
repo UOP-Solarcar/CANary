@@ -19,7 +19,10 @@ class MESSAGE_ID(Enum):
     CELL = 0x36
 
     def __len__(self):
-        return 6
+        count = 0
+        for _ in MESSAGE_ID:
+            count += 1
+        return count
 
 
 ser = serial.Serial(PORT, BAUD, timeout=1)
@@ -147,7 +150,6 @@ def serialRcv():
             if (count == len(MESSAGE_ID)):
                 f.write(str(datetime.now())+ '\n')
                 count = 0
-
             
             '''for byte in frame[0]:
                 if count == 3:
