@@ -18,7 +18,7 @@ class MESSAGE_ID(Enum):
     HEALTH = 0x6B4
     CELL = 0x36
 
-    def __sizeof__(self):
+    def __len__(self):
         return 6
 
 
@@ -144,7 +144,7 @@ def serialRcv():
             for data in actual_data[1:]:
                 f.write(str(data) + ',')
             count = count + 1
-            if (count == sizeof(MESSAGE_ID)):
+            if (count == len(MESSAGE_ID)):
                 f.write(str(datetime.now())+ '\n')
                 count = 0
 
