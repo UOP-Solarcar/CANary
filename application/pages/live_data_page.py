@@ -24,11 +24,7 @@ CELL_V_HI_ct  =  42000   # 4.2000 V  (units: 0.0001 V)
 CELL_V_LO_ct  =  25000   # 2.5000 V
 
 if "data" not in st.session_state:
-    st.session_state.data = pd.read_csv("data.csv")[-5000:]
-
-@st.fragment(run_every=1)
-def fetch_data():
-    st.session_state.data = pd.read_csv("data.csv")[-5000:]
+    st.session_state.data = pd.read_csv("data.csv")
 
 def soc_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
@@ -41,7 +37,7 @@ def soc_update_data() -> pd.DataFrame:
     df = df.dropna()
     df = df.sort_values("timestamp").reset_index(drop=True)
 
-    return df[:500]
+    return df
 
 def temp_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
@@ -102,7 +98,7 @@ def describe_faults(row) -> str:
 def new_time():
     st.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-@st.fragment(run_every=2)
+@st.fragment(run_every=5)
 def soc_chart():
     df_soc = soc_update_data()
     base = alt.Chart(df_soc).encode(
@@ -126,7 +122,7 @@ def soc_chart():
     chart = base.mark_line(color="#2563eb", strokeWidth=2)
     st.altair_chart(chart.properties(height=400).interactive(), width='stretch')
 
-@st.fragment(run_every=2)
+@st.fragment(run_every=5)
 def temp_chart():
     df_temp = temp_update_data()
     base = alt.Chart(df_temp).encode(
@@ -156,6 +152,7 @@ def temp_chart():
 
 @st.fragment(run_every=1)
 def table():
+    st.session_state.data = pd.read_csv("data.csv")
     df = st.session_state.data.sort_values("timestamp", ascending=False).reset_index(drop=True)
     st.dataframe(df[["timestamp","pack_current","pack_inst_voltage","pack_soc","relay_state","pack_dcl","pack_ccl","BMS_high_temp","BMS_low_temp","high_cell_voltage","high_cell_voltage_id","low_cell_voltage","low_cell_voltage_id","cell_high_temp","high_thermistor_id","cell_low_temp","low_thermistor_id","avg_temp","internal_temp","pack_health","adaptive_total_capacity","input_supply_voltage","cell_id","instant_voltage","internal_resistance","open_voltage"]])
 
