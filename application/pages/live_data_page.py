@@ -24,11 +24,11 @@ CELL_V_HI_ct  =  42000   # 4.2000 V  (units: 0.0001 V)
 CELL_V_LO_ct  =  25000   # 2.5000 V
 
 if "data" not in st.session_state:
-    st.session_state.data = pd.read_csv("data.csv")
+    st.session_state.data = pd.read_csv("data.csv")[-5000:]
 
 @st.fragment(run_every=1)
 def fetch_data():
-    st.session_state.data = pd.read_csv("data.csv")
+    st.session_state.data = pd.read_csv("data.csv")[-5000:]
 
 def soc_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
@@ -181,7 +181,7 @@ with header4:
 with header6:
     new_time()
 with header7:
-    st.download_button("Export", st.session_state.data.to_csv(), "solar_car_data.csv")
+    st.download_button("Export", pd.read_csv("data.csv").to_csv(), "solar_car_data.csv")
 
 # Columns
 col1, col2 = st.columns([3,2])
