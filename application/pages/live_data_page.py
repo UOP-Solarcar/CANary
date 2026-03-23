@@ -22,6 +22,7 @@ TRIP_V_LO_dV  =  780     # 78.0 V
 TRIP_T_HI_C   =  45      # 45 °C
 CELL_V_HI_ct  =  42000   # 4.2000 V  (units: 0.0001 V)
 CELL_V_LO_ct  =  25000   # 2.5000 V
+num_faults = 0
 
 if "data" not in st.session_state:
     st.session_state.data = pd.read_csv("data.csv")
@@ -60,7 +61,6 @@ def temp_update_data() -> pd.DataFrame:
 
 def fault_detection():
     df = st.session_state.data.sort_values("timestamp", ascending=False).reset_index(drop=True)[:1000]
-
     fault_mask = (
         (df["BMS_high_temp"]      >= TRIP_T_HI_C)   |
         (df["pack_current"]        > TRIP_I_HI_dA)   |
@@ -70,8 +70,11 @@ def fault_detection():
         (df["high_cell_voltage"]  >= CELL_V_HI_ct)   |
         (df["low_cell_voltage"]   <= CELL_V_LO_ct)
     )
-
-    return df[fault_mask].copy()
+    
+    faults = df[fault_mask].copy()
+    num_faults = len(df[fault_mask].copy())
+    st.write("Faults (" + str(num_faults) + ")")
+    return faults
 
 def describe_faults(row) -> str:
     messages = []
