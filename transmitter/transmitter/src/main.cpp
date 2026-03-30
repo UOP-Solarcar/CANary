@@ -22,20 +22,7 @@ Idea: Messages stored into buffer, should represent all IDS. Send transmission w
 
 //MCP2515 CS pin
 #define MCP2515_CS 6
-/*
-//interrupt setup
-volatile bool canInterrupt = false;
 
-void canISR() {
-  canInterrupt = true;
-}
-
-#define CAN_QUEUE_SIZE 16
-
-can_frame canQueue[CAN_QUEUE_SIZE];
-volatile uint8_t head = 0;
-volatile uint8_t tail = 0;
-*/
 const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4, 0x36};
 const uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
 
@@ -50,7 +37,6 @@ RH_RF95 driver(RFM95_CS, RFM95_INT);
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial);
   Serial.println("Booting...");
 
   // Pull both CS pins HIGH before SPI init to prevent bus contention
@@ -80,53 +66,12 @@ void setup() {
 
   driver.setTxPower(20, false);
   driver.setCADTimeout(100);
-  driver.setFrequency(915.0); // 915MHz for US, change to 868.0 for EU
-  /*
-  // Drain any messages already sitting in the buffer
-  can_frame dummy;
-  while (mcp2515.readMessage(&dummy) == MCP2515::ERROR_OK) {}
-
-  pinMode(3, INPUT_PULLUP);//pin 3 is interrupt pin
-  attachInterrupt(0, canISR, FALLING);//interrupt 0 is mapped to pin 3*/
+  driver.setFrequency(915.0); // 915MHz for US
+  
   Serial.println("Ready.\n");
 }
 
-void loop() {/*
-  if (canInterrupt) {
-    canInterrupt = false;
-    Serial.println("ISR fired!");
-    
-    can_frame f;
-    uint8_t count = 0;
-    while (count < 4 && mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
-      uint8_t next = (head + 1) % CAN_QUEUE_SIZE;
-      if (next != tail) {
-        canQueue[head] = f;
-        head = next;
-      }
-      count++;
-      if(count == 4) canInterrupt = true;
-    }
-  }
-
-  if (tail != head) {
-    can_frame &f = canQueue[tail];
-
-    Serial.print("CAN RX ID: 0x");
-    Serial.println(f.can_id, HEX);
-
-    data[0] = (f.can_id >> 24) & 0xFF;
-    data[1] = (f.can_id >> 16) & 0xFF;
-    data[2] = (f.can_id >> 8) & 0xFF;
-    data[3] = f.can_id & 0xFF;
-    memcpy(&data[4], f.data, 8);
-
-    manager.sendtoWait(data, sizeof(data), SERVER_ADDRESS);
-
-    tail = (tail + 1) % CAN_QUEUE_SIZE;
-  }
-
-  */
+void loop() {
   can_frame f;
   while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
     for (int i = 0; i < length; i++) {
