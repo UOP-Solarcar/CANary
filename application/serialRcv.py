@@ -66,8 +66,8 @@ def naturalizeData(msg_id, data):
     ID = ID.name
 
     if ID == 'BASIC':
-        pack_current = int.from_bytes(data[0:2], signed=True, byteorder='big')  # signed int, have to specify so method performs two's comp to decode
-        pack_inst_voltage = int.from_bytes(data[2:4], signed=False, byteorder='big')
+        pack_current = float(0.1 * int.from_bytes(data[0:2], signed=True, byteorder='big'))  # signed int, have to specify so method performs two's comp to decode
+        pack_inst_voltage = float(0.1 * int.from_bytes(data[2:4], signed=False, byteorder='big'))
         pack_soc = int.from_bytes(data[4:5], signed=False, byteorder='big')
         relay_state = int.from_bytes(data[5:7], signed=False, byteorder='big')
         checksum = int.from_bytes(data[7:], signed=False, byteorder='big')
@@ -80,9 +80,9 @@ def naturalizeData(msg_id, data):
         checksum = int.from_bytes(data[6:], signed=False, byteorder='big')
         return ['BMS_TEMP', pack_dcl, pack_ccl, high_temp, low_temp, checksum]
     elif ID == 'STRINGS':
-        high_cell_voltage = int.from_bytes(data[0:2], signed=False, byteorder='big')
+        high_cell_voltage = float(0.0001 * int.from_bytes(data[0:2], signed=False, byteorder='big'))
         high_cell_voltage_id = int.from_bytes(data[2:3], signed=False, byteorder='big')
-        low_cell_voltage = int.from_bytes(data[3:5], signed=False, byteorder='big')
+        low_cell_voltage = float(0.0001 * int.from_bytes(data[3:5], signed=False, byteorder='big'))
         low_cell_voltage_id = int.from_bytes(data[5:6], signed=False, byteorder='big')
         checksum = int.from_bytes(data[6:], signed=False, byteorder='big')
         return ['STRINGS', high_cell_voltage, high_cell_voltage_id, low_cell_voltage, low_cell_voltage_id, checksum]
@@ -98,14 +98,14 @@ def naturalizeData(msg_id, data):
     elif ID == 'HEALTH':
         pack_health = int.from_bytes(data[0:1], signed=False, byteorder='big')
         adaptive_total_capacity = int.from_bytes(data[1:3], signed=False, byteorder='big')
-        input_supply_voltage = int.from_bytes(data[3:5], signed=False, byteorder='big')
+        input_supply_voltage = float(0.1 * int.from_bytes(data[3:5], signed=False, byteorder='big'))
         checksum = int.from_bytes(data[5:], signed=False, byteorder='big')
         return ['HEALTH', pack_health, adaptive_total_capacity, input_supply_voltage, checksum]
     elif ID == 'CELL':
         cell_id = int.from_bytes(data[0:1], signed=False, byteorder='big')
-        instant_voltage = int.from_bytes(data[1:3], signed=False, byteorder='big')
+        instant_voltage = float(0.0001 * int.from_bytes(data[1:3], signed=False, byteorder='big'))
         internal_resistance = int.from_bytes(data[3:5], signed=False, byteorder='big')
-        open_voltage = int.from_bytes(data[5:7], signed=False, byteorder='big')
+        open_voltage = float (0.0001 * int.from_bytes(data[5:7], signed=False, byteorder='big'))
         checksum = int.from_bytes(data[7:], signed=False, byteorder='big')
         return ['CELL', cell_id, instant_voltage, internal_resistance, open_voltage, checksum]
     print("ERROR TRANSLATING DATA")
