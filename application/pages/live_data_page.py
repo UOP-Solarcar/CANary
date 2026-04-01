@@ -2,6 +2,7 @@ from datetime import datetime
 import streamlit as st
 import altair as alt
 import pandas as pd
+import numpy as np
 from multiprocessing import Process
 #import serialRcv
 
@@ -24,13 +25,54 @@ CELL_V_HI_ct  =  42000   # 4.2000 V  (units: 0.0001 V)
 CELL_V_LO_ct  =  25000   # 2.5000 V
 num_faults = 0
 
+_SOC_POINTS = np.array([
+    0.00, 0.02, 0.05, 0.08, 0.10, 0.13, 0.15, 0.20, 0.25, 0.30,
+    0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80,
+    0.85, 0.88, 0.90, 0.93, 0.95, 0.97, 1.00
+])
+
+_OCV_POINTS = np.array([
+    2.50, 2.92, 3.15, 3.35, 3.44, 3.51, 3.55, 3.60, 3.63, 3.66,
+    3.68, 3.70, 3.71, 3.72, 3.73, 3.75, 3.77, 3.79, 3.82, 3.86,
+    3.91, 3.96, 4.00, 4.06, 4.10, 4.15, 4.20
+])
+
+# Pack configuration
+CELLS_IN_SERIES = 24
+
+# Precompute pack-level OCV curve
+_PACK_OCV_POINTS = _OCV_POINTS * CELLS_IN_SERIES
+
 if "data" not in st.session_state:
     st.session_state.data = pd.read_csv("data.csv")
+
+
+def pack_voltage_to_soc(pack_voltage: float, clamp: bool = True) -> float:
+    v_min = _PACK_OCV_POINTS[0]   # 60.0 V
+    v_max = _PACK_OCV_POINTS[-1]  # 100.8 V
+
+    if not clamp and not (v_min <= pack_voltage <= v_max):
+        raise ValueError(
+            f"pack_voltage {pack_voltage:.2f} V is outside valid range "
+            f"[{v_min:.1f} V, {v_max:.1f} V]."
+        )
+
+    # np.interp clamps naturally, which matches clamp=True behavior
+    soc_fraction = np.interp(pack_voltage, _PACK_OCV_POINTS, _SOC_POINTS)
+    return round(float(soc_fraction * 100), 2)
+
+
+def cell_voltage_to_soc(cell_voltage: float, clamp: bool = True) -> float:
+    return pack_voltage_to_soc(cell_voltage * CELLS_IN_SERIES, clamp=clamp)
 
 def soc_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
 
-    df = df_raw[["timestamp", "pack_soc"]].copy()
+    df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage"]].copy()
+    for i in df.index:
+        df.loc[i, "pack_soc"] = pack_voltage_to_soc(df.loc[i, "pack_inst_voltage"])
+    df.columns = ["timestamp", "pack_soc", "pack_inst_voltage"]
+    df = df.drop(columns = "pack_inst_voltage")
     df.columns = ["timestamp", "pack_soc"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
