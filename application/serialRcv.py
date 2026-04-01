@@ -111,19 +111,6 @@ def naturalizeData(msg_id, data):
     print("ERROR TRANSLATING DATA")
     return
 
-def writeData(actual_data):
-    '''f = open('data.csv', 'a')
-    for _ in actual_data[1:]:
-    match actual_data[0]:
-        case 'BASIC':
-            for _ in actual_data[1:]:
-        case 'BMS_TEMP':
-        case 'STRINGS':
-        case 'BATTERY_TEMP':
-        case 'HEALTH':
-        case 'CELL': '''
-
-
 def serialRcv():
     f = open('data.csv', 'w')
     f.write("BASIC,pack_current,pack_inst_voltage,pack_soc,relay_state,checksum," \
