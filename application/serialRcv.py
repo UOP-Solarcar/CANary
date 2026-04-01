@@ -137,20 +137,6 @@ def serialRcv():
             if (count == len(MESSAGE_ID)):
                 f.write(str(datetime.now())+ '\n')
                 count = 0
-            
-            '''for byte in frame[0]:
-                if count == 3:
-                    f.write(str(byte))
-                f.write(str(byte) + ',')
-                count + 1
-            count = 0
-            for byte in frame[1]:
-                if count == 7:
-                    f.write(str(byte))
-                else:
-                    f.write(str(byte) + ',')
-                    count = count + 1
-            f.write('\n')'''
             f.close()
         else:
             print("No data in frame")
