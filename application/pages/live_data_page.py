@@ -71,7 +71,6 @@ def soc_update_data() -> pd.DataFrame:
     df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage"]].copy()
     for i in df.index:
         df.loc[i, "pack_soc"] = pack_voltage_to_soc(df.loc[i, "pack_inst_voltage"])
-        print(df.loc[i, "pack_soc"])
     df.columns = ["timestamp", "pack_soc", "pack_inst_voltage"]
     df = df.drop(columns = "pack_inst_voltage")
     df.columns = ["timestamp", "pack_soc"]
