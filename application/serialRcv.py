@@ -68,7 +68,7 @@ def naturalizeData(msg_id, data):
     if ID == 'BASIC':
         pack_current = float(0.1 * int.from_bytes(data[0:2], signed=True, byteorder='big'))  # signed int, have to specify so method performs two's comp to decode
         pack_inst_voltage = round(float(0.1 * int.from_bytes(data[2:4], signed=False, byteorder='big')), 5)
-        pack_soc = int.from_bytes(data[4:5], signed=False, byteorder='big')
+        pack_soc = float(int.from_bytes(data[4:5], signed=False, byteorder='big'))
         relay_state = int.from_bytes(data[5:7], signed=False, byteorder='big')
         checksum = int.from_bytes(data[7:], signed=False, byteorder='big')
         return ['BASIC', pack_current, pack_inst_voltage, pack_soc, relay_state, checksum]

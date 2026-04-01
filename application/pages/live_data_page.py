@@ -38,7 +38,7 @@ _OCV_POINTS = np.array([
 ])
 
 # Pack configuration
-CELLS_IN_SERIES = 24
+CELLS_IN_SERIES = 23
 
 # Precompute pack-level OCV curve
 _PACK_OCV_POINTS = _OCV_POINTS * CELLS_IN_SERIES
@@ -71,6 +71,7 @@ def soc_update_data() -> pd.DataFrame:
     df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage"]].copy()
     for i in df.index:
         df.loc[i, "pack_soc"] = pack_voltage_to_soc(df.loc[i, "pack_inst_voltage"])
+        print(df.loc[i, "pack_soc"])
     df.columns = ["timestamp", "pack_soc", "pack_inst_voltage"]
     df = df.drop(columns = "pack_inst_voltage")
     df.columns = ["timestamp", "pack_soc"]
@@ -146,6 +147,10 @@ def new_time():
 @st.fragment(run_every=5)
 def soc_chart():
     df_soc = soc_update_data()
+    if df_soc.empty:
+        st.info("Waiting for SOC data...")
+        return
+    
     base = alt.Chart(df_soc).encode(
         x=alt.X(
             "timestamp:T", 
@@ -170,6 +175,10 @@ def soc_chart():
 @st.fragment(run_every=5)
 def temp_chart():
     df_temp = temp_update_data()
+    if df_temp.empty:
+        st.info("Waiting for temperature data...")
+        return
+    
     base = alt.Chart(df_temp).encode(
         x=alt.X(
             "timestamp:T", 
