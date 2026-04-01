@@ -16,13 +16,13 @@ from multiprocessing import Process
 #    st.session_state.serial_process = start_serial_process()
 
 #Fault Thresholds
-TRIP_I_HI_dA  =  1000    # +100.0 A  (units: 0.1 A)
-TRIP_I_LO_dA  = -425     # -42.5 A
-TRIP_V_HI_dV  =  950     # 95.0 V    (units: 0.1 V)
-TRIP_V_LO_dV  =  780     # 78.0 V
+TRIP_I_HI_dA  =  100.0    # +100.0 A  (units: 0.1 A)
+TRIP_I_LO_dA  = -42.5     # -42.5 A
+TRIP_V_HI_dV  =  95.0     # 95.0 V    (units: 0.1 V)
+TRIP_V_LO_dV  =  78.0     # 78.0 V
 TRIP_T_HI_C   =  45      # 45 °C
-CELL_V_HI_ct  =  42000   # 4.2000 V  (units: 0.0001 V)
-CELL_V_LO_ct  =  25000   # 2.5000 V
+CELL_V_HI_ct  =  4.2000   # 4.2000 V  (units: 0.0001 V)
+CELL_V_LO_ct  =  2.5000   # 2.5000 V
 num_faults = 0
 
 _SOC_POINTS = np.array([
