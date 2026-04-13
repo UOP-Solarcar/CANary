@@ -14,8 +14,7 @@ The system is composed of embedded and host-side components that form a continuo
 2. **RF Transmission (Embedded)**  
    Each CAN frame is parsed into:
    - Message ID  
-   - Data payload  
-   These are transmitted wirelessly using the `RH_RF95` (LoRa) library.
+   - Data payload: These are transmitted wirelessly using the `RH_RF95` (LoRa) library.
 
 3. **RF Reception (Embedded)**  
    The receiver reconstructs the CAN frame from the RF packet and forwards it over serial to the host system.
