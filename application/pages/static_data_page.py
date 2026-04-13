@@ -215,11 +215,9 @@ with header1:
     if st.button("Home"):
         st.switch_page("pages/home_page.py")
 with header2:
-    st.write("Session Name")
-with header3:
-    st.write("Connection Status")
+    st.write(uploaded_file)
 with header4:
-    st.write("Mode: Live")
+    st.write("Mode: Static")
 with header6:
     new_time()
 with header7:

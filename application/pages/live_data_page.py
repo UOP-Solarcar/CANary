@@ -223,7 +223,7 @@ with header1:
     if st.button("Home"):
         st.switch_page("pages/home_page.py")
 with header2:
-    st.write("Session Name")
+    st.write("data.csv")
 with header3:
     st.write("Connection Status")
 with header4:
