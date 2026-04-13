@@ -45,6 +45,7 @@ pio run -t upload transmitter\main.cpp
 pio run -t upload receiver\main.cpp
 
 # 5. Run the Serial Receiver
+cd application
 python serialRcv.py
 
 # 6. Run the Streamlit dashboard
