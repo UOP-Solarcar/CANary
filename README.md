@@ -58,4 +58,4 @@ pio run -t upload receiver\main.cpp
 python serialRcv.py
 
 # 6. Run the Streamlit dashboard
-streamlit run app.py
+streamlit run dashboard.py
