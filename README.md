@@ -28,21 +28,11 @@ The system is composed of embedded and host-side components that form a continuo
 
 ---
 
-## Features
-
-- Real-time CAN data acquisition and transmission  
-- Wireless telemetry via LoRa (`RH_RF95`)  
-- Live data logging to CSV  
-- Interactive dashboard using Streamlit  
-- Modular pipeline (CAN → RF → Serial → CSV → UI)
-
----
-
 ## Installation
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url>
+git clone https://github.com/UOP-Solarcar/CANary.git
 cd CANary
 
 # 2. Install Python dependencies
