@@ -38,10 +38,14 @@ cd CANary
 pip install -r requirements.txt
 
 # 3. Compile and upload program to connected transmitter
-pio run -t upload transmitter\main.cpp
+cd transmitter
+pio run -t upload
+cd ..
 
 # 4. Compile and upload receiver program to connected receiver
+cd receiver
 pio run -t upload receiver\main.cpp
+cd ..
 
 # 5. Run the Serial Receiver
 cd application
