@@ -101,6 +101,26 @@ def temp_update_data() -> pd.DataFrame:
         value_name="temperature",
     )
 
+def compute_battery_energy():
+    df_wh = st.session_state.data
+
+
+    df_wh['timestamp'] = pd.to_datetime(df_wh['timestamp'])
+    df_wh = df_wh.sort_values('timestamp').reset_index(drop=True)
+    df_wh['dt'] = df_wh['timestamp'].diff().dt.total_seconds()
+    df_wh = df_wh.dropna(subset=['dt'])
+
+    # Compute power (W)
+    df_wh['power'] = -df_wh['pack_current'] * df_wh['pack_inst_voltage']
+
+    # Compute incremental energy (Wh)
+    df_wh['energy_Wh'] = df_wh['power'] * df_wh['dt'] / 3600.0
+
+    total_energy = df_wh['energy_Wh'].sum()
+
+    return int(total_energy)
+    
+
 def fault_detection():
     df = st.session_state.data.sort_values("timestamp", ascending=False).reset_index(drop=True)[:1000]
     fault_mask = (
@@ -215,7 +235,9 @@ def text_status():
         st.write(i)
     #st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
 
-
+@st.fragment(run_every=5)
+def text_power():
+    st.write("Net Wh: ", compute_battery_energy())
 
 st.set_page_config(layout="wide")
 header1, header2, header3, header4, header5, header6, header7 = st.columns(7, vertical_alignment="center")
@@ -228,6 +250,8 @@ with header3:
     st.write("Connection Status")
 with header4:
     st.write("Mode: Live")
+with header5:
+    text_power()
 with header6:
     new_time()
 with header7:

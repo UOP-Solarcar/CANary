@@ -6,11 +6,11 @@ import altair as alt
 from numpy.random import default_rng as rng
 
 
-if "data" not in st.session_state:
-    uploaded_file = st.file_uploader("Upload CSV file", type=("csv"))
+if "data" not in st.session_state or "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = st.file_uploader("Upload CSV file", type=("csv"))
     
-    if uploaded_file is not None:
-        st.session_state.data = pd.read_csv(uploaded_file)
+    if st.session_state.uploaded_file is not None:
+        st.session_state.data = pd.read_csv(st.session_state.uploaded_file)
         st.rerun()
     else:
         st.stop()
@@ -97,6 +97,25 @@ def temp_update_data() -> pd.DataFrame:
         var_name="series",
         value_name="temperature",
     )
+
+def compute_battery_energy():
+    df_wh = st.session_state.data
+
+
+    df_wh['timestamp'] = pd.to_datetime(df_wh['timestamp'])
+    df_wh = df_wh.sort_values('timestamp').reset_index(drop=True)
+    df_wh['dt'] = df_wh['timestamp'].diff().dt.total_seconds()
+    df_wh = df_wh.dropna(subset=['dt'])
+
+    # Compute power (W)
+    df_wh['power'] = -df_wh['pack_current'] * df_wh['pack_inst_voltage']
+
+    # Compute incremental energy (Wh)
+    df_wh['energy_Wh'] = df_wh['power'] * df_wh['dt'] / 3600.0
+
+    total_energy = df_wh['energy_Wh'].sum()
+
+    return int(total_energy)
 
 def fault_detection():
     df = st.session_state.data.sort_values("timestamp", ascending=False).reset_index(drop=True)[:1000]
@@ -207,7 +226,8 @@ def text_status():
         st.write(i)
     #st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
 
-
+def text_power():
+    st.write("Net Wh: ", compute_battery_energy())
 
 st.set_page_config(layout="wide")
 header1, header2, header3, header4, header5, header6, header7 = st.columns(7, vertical_alignment="center")
@@ -215,9 +235,11 @@ with header1:
     if st.button("Home"):
         st.switch_page("pages/home_page.py")
 with header2:
-    st.write(uploaded_file)
+    if st.session_state.uploaded_file is not None : st.write(st.session_state.uploaded_file.name)
 with header4:
     st.write("Mode: Static")
+with header5:
+    text_power()
 with header6:
     new_time()
 with header7:
