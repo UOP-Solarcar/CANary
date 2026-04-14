@@ -14,8 +14,7 @@ The system is composed of embedded and host-side components that form a continuo
 2. **RF Transmission (Embedded)**  
    Each CAN frame is parsed into:
    - Message ID  
-   - Data payload  
-   These are transmitted wirelessly using the `RH_RF95` (LoRa) library.
+   - Data payload: These are transmitted wirelessly using the `RH_RF95` (LoRa) library.
 
 3. **RF Reception (Embedded)**  
    The receiver reconstructs the CAN frame from the RF packet and forwards it over serial to the host system.
@@ -28,21 +27,11 @@ The system is composed of embedded and host-side components that form a continuo
 
 ---
 
-## Features
-
-- Real-time CAN data acquisition and transmission  
-- Wireless telemetry via LoRa (`RH_RF95`)  
-- Live data logging to CSV  
-- Interactive dashboard using Streamlit  
-- Modular pipeline (CAN → RF → Serial → CSV → UI)
-
----
-
 ## Installation
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url>
+git clone https://github.com/UOP-Solarcar/CANary.git
 cd CANary
 
 # 2. Install Python dependencies
@@ -55,6 +44,7 @@ pio run -t upload transmitter\main.cpp
 pio run -t upload receiver\main.cpp
 
 # 5. Run the Serial Receiver
+cd application
 python serialRcv.py
 
 # 6. Run the Streamlit dashboard
