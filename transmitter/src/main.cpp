@@ -8,9 +8,6 @@
  *              https://registry.platformio.org/libraries/epsilonrt/RadioHead/examples/rf95/rf95_reliable_datagram_client/rf95_reliable_datagram_client.pde
  *******************************************************************/
 
-/*
-Idea: Messages stored into buffer, should represent all IDS. Send transmission with all IDS as one packet.
-*/
 #include <RH_RF95.h>
 #include <mcp2515.h>
 #include <SPI.h>
@@ -54,7 +51,6 @@ void setup() {
   mcp2515.setFilterMask(MCP2515::MASK0, false, 0x00000000); // accept all
   mcp2515.setFilterMask(MCP2515::MASK1, false, 0x00000000); // accept all
   mcp2515.setNormalMode();
-  //mcp2515.setRegister(MCP2515::REGISTER::MCP_CANINTE, 0x03); // Enable RX0IE and RX1IE
 
   //LoRa init
   Serial.print("LoRa init... ");
@@ -87,9 +83,6 @@ void loop() {
     }
     if (count == length) count = 0;
     else continue;
-    /*Serial.print("CAN RX ID: 0x");
-    Serial.print(f.can_id, HEX);
-    Serial.print(" -> Sending over LoRa... ");*/
 
     // Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
     for (int i = 0; i < length; i++) id_check[i] = false;

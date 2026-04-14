@@ -14,11 +14,10 @@
 #define CLIENT_ADDRESS 1
 #define SERVER_ADDRESS 2
 
-// ── Feather 32u4 RFM95 hardwired pins ────────────────────────────────────────
+//Feather 32u4 RFM95 hardwired pins
 #define RFM95_CS  8
 #define RFM95_INT 7
 
-// Singleton instance of the radio driver
 RH_RF95 driver(RFM95_CS, RFM95_INT);
 
 void setup() 
@@ -28,7 +27,7 @@ void setup()
   pinMode(RFM95_CS, OUTPUT);
   digitalWrite(RFM95_CS, HIGH);
 
-  // ── LoRa init ───────────────────────────────────────────────────────────────
+  //LoRa init
   Serial.print("LoRa init... ");
   if (!driver.init()) {
     Serial.println("FAILED - check RFM95 is seated properly on Feather");
@@ -38,13 +37,12 @@ void setup()
 
   driver.setTxPower(20, false);
   driver.setCADTimeout(100);
-  driver.setFrequency(915.0); // 915MHz for US, change to 868.0 for EU
+  driver.setFrequency(915.0); // 915MHz for US
 
   Serial.println("Ready.\n");
 }
 
 uint8_t data[73];
-// Dont put this on the stack:
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t len = 72;
 
