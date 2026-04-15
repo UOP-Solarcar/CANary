@@ -239,6 +239,18 @@ def text_status():
 def text_power():
     st.write("Net Wh: ", compute_battery_energy())
 
+@st.fragment(run_every=1)
+def text_con_status():
+    if st.session_state.data.empty:
+        st.write("Connection: None")
+        return
+    last_time = pd.to_datetime(st.session_state.data.iloc[-1]["timestamp"])
+    time_delta = (datetime.now() - last_time).total_seconds()
+    
+    if time_delta > 5: st.write("Connection: Disconnected")
+    elif time_delta > 1: st.write("Connection: Unstable")
+    else: st.write("Connection: Good")
+
 st.set_page_config(layout="wide")
 header1, header2, header3, header4, header5, header6, header7 = st.columns(7, vertical_alignment="center")
 with header1:
@@ -247,7 +259,7 @@ with header1:
 with header2:
     st.write("data.csv")
 with header3:
-    st.write("Connection Status")
+    text_con_status()
 with header4:
     st.write("Mode: Live")
 with header5:
