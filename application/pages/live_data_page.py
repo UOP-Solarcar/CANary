@@ -69,6 +69,7 @@ def soc_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
 
     df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage", "pack_current"]].copy()
+    df["watts"] = None
     for i in df.index:
         df.loc[i, "pack_soc"] = pack_voltage_to_soc(df.loc[i, "pack_inst_voltage"])
         df.loc[i, "watts"] = int(df.loc[i, "pack_inst_voltage"] * df.loc[i, "pack_current"])
