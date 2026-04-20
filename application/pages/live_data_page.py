@@ -4,16 +4,6 @@ import altair as alt
 import pandas as pd
 import numpy as np
 from multiprocessing import Process
-#import serialRcv
-
-#def start_serial_process():
-#    p = Process(target=serialRcv.serialRcv)
-#    p.daemon = True
-#    p.start()
-#    return p
-
-#if "serial_process" not in st.session_state:
-#    st.session_state.serial_process = start_serial_process()
 
 #Fault Thresholds
 TRIP_I_HI_dA  =  100.0    # +100.0 A  (units: 0.1 A)
@@ -172,7 +162,10 @@ def soc_chart():
         st.info("Waiting for SOC data...")
         return
     
-    base = alt.Chart(df_soc).encode(
+    df_soc['soc_series'] = 'State of Charge'
+    df_soc['watts_series'] = 'Power'
+
+    base = alt.Chart(df_soc).mark_line(strokeWidth=2).encode(
         x=alt.X(
             "timestamp:T", 
             title="Time", 
@@ -184,13 +177,19 @@ def soc_chart():
             title="State of Charge (%)",
             scale=alt.Scale(domain=[0, 100]),
         ),
+        color=alt.Color(
+            "soc_series:N",
+            scale=alt.Scale(domain=['State of Charge', 'Power'], 
+                          range=['#2563eb', '#d28500']),
+            legend=alt.Legend(title="Legend:")
+        ),
         tooltip=[
             alt.Tooltip("timestamp:T", title="Time", format="%H:%M:%S.%L"),
             alt.Tooltip("pack_soc:Q", title="SoC (%)", format=".1f"),
         ],
     )
 
-    base1 = alt.Chart(df_soc).encode(
+    base1 = alt.Chart(df_soc).mark_line(strokeWidth=2).encode(
         x=alt.X(
             "timestamp:T", 
             title="Time", 
@@ -202,16 +201,27 @@ def soc_chart():
             title="Power (W)",
             scale=alt.Scale(domain=[-4500, 10000]),
         ),
+        color=alt.Color(
+            "watts_series:N",
+            scale=alt.Scale(domain=['State of Charge', 'Power'], 
+                          range=['#2563eb', '#d28500']),
+            legend=alt.Legend(title="Legend:")
+        ),
         tooltip=[
             alt.Tooltip("timestamp:T", title="Time", format="%H:%M:%S.%L"),
             alt.Tooltip("watts:Q", title="Power (W)", format=".1f"),
         ],
     )
 
-    chart = base.mark_line(color="#2563eb", strokeWidth=2)
-    chart1 = base1.mark_line(color="#d28500", strokeWidth=2)
-    chart = alt.layer(chart, chart1).resolve_scale(
-        y = "independent"
+    # Combine charts with legend at bottom
+    chart = alt.layer(base, base1).resolve_scale(
+        y="independent"
+    ).resolve_legend(
+        color='shared'
+    ).configure_legend(
+        orient='bottom',
+        direction='horizontal',
+        titleOrient='left'
     )
     st.altair_chart(chart.properties(height=400).interactive(), width='stretch')
 
@@ -234,7 +244,7 @@ def temp_chart():
             title="Temperature (°C)", 
             scale=alt.Scale(domain=[0, 65])
         ),
-        color=alt.Color("series:N", title="Metric", legend=alt.Legend(
+        color=alt.Color("series:N", title="Legend:", legend=alt.Legend(
             labelExpr="datum.label == 'high_temp' ? 'High' : datum.label == 'low_temp' ? 'Low' : 'Avg'"
         )),
         tooltip=[
@@ -244,7 +254,11 @@ def temp_chart():
         ],
     )
 
-    chart = base.mark_line(strokeWidth=2)
+    chart = base.mark_line(strokeWidth=2).configure_legend(
+        orient='bottom',
+        direction='horizontal',
+        titleOrient='left'
+    )
     st.altair_chart(chart.properties(height=400).interactive(), width='stretch')
 
 @st.fragment(run_every=1)
