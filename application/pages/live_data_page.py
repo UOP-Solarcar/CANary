@@ -68,15 +68,16 @@ def cell_voltage_to_soc(cell_voltage: float, clamp: bool = True) -> float:
 def soc_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
 
-    df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage"]].copy()
+    df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage", "pack_current"]].copy()
     for i in df.index:
         df.loc[i, "pack_soc"] = pack_voltage_to_soc(df.loc[i, "pack_inst_voltage"])
-    df.columns = ["timestamp", "pack_soc", "pack_inst_voltage"]
-    df = df.drop(columns = "pack_inst_voltage")
-    df.columns = ["timestamp", "pack_soc"]
+        df.loc[i, "watts"] = int(df.loc[i, "pack_inst_voltage"] * df.loc[i, "pack_current"])
+    df = df.drop(columns = ["pack_inst_voltage", "pack_current"])
+    df.columns = ["timestamp", "pack_soc", "watts"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["pack_soc"] = pd.to_numeric(df["pack_soc"], errors="coerce")
+    df["watts"] = pd.to_numeric(df["watts"], errors="coerce")
     df = df.dropna()
     df = df.sort_values("timestamp").reset_index(drop=True)
 
@@ -188,7 +189,29 @@ def soc_chart():
         ],
     )
 
+    base1 = alt.Chart(df_soc).encode(
+        x=alt.X(
+            "timestamp:T", 
+            title="Time", 
+            axis=alt.Axis(format="%H:%M:%S"), 
+            scale=alt.Scale(domain=[df_soc["timestamp"].iloc[-1] - pd.Timedelta(minutes=1), df_soc["timestamp"].iloc[-1]])
+        ),
+        y=alt.Y(
+            "watts:Q",
+            title="Power (W)",
+            scale=alt.Scale(domain=[-4500, 10000]),
+        ),
+        tooltip=[
+            alt.Tooltip("timestamp:T", title="Time", format="%H:%M:%S.%L"),
+            alt.Tooltip("watts:Q", title="Power (W)", format=".1f"),
+        ],
+    )
+
     chart = base.mark_line(color="#2563eb", strokeWidth=2)
+    chart1 = base1.mark_line(color="#d28500", strokeWidth=2)
+    chart = alt.layer(chart, chart1).resolve_scale(
+        y = "independent"
+    )
     st.altair_chart(chart.properties(height=400).interactive(), width='stretch')
 
 @st.fragment(run_every=5)
@@ -235,7 +258,7 @@ def text_status():
         st.write(i)
     #st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
 
-@st.fragment(run_every=5)
+@st.fragment(run_every=2)
 def text_power():
     st.write("Net Wh: ", compute_battery_energy())
 
@@ -248,7 +271,7 @@ def text_con_status():
     time_delta = (datetime.now() - last_time).total_seconds()
     
     if time_delta > 5: st.write("Connection: Disconnected")
-    elif time_delta > 1: st.write("Connection: Unstable")
+    elif time_delta > 2: st.write("Connection: Unstable")
     else: st.write("Connection: Good")
 
 st.set_page_config(layout="wide")
