@@ -5,7 +5,7 @@ import subprocess
 from multiprocessing import Process
 
 if __name__ == "__main__":
-    '''q = Queue()
+    """q = Queue()
 
     p1 = Process(target=serialRcv.serialRcv(), args=(q,))
     p2 = Process(target=dashboard.dashboardStart(), args=(q,))
@@ -14,16 +14,16 @@ if __name__ == "__main__":
     p2.start()
 
     p1.join()
-    p2.terminate()'''
+    p2.terminate()"""
 
 if __name__ == "__main__":
     p = Process(target=serialRcv.serialRcv())
     p.start()
-    #result = subprocess.run(["streamlit", "run", "dashboard.py"])
-    #print(f"Command finished with return code: {result.returncode}")
+    # result = subprocess.run(["streamlit", "run", "dashboard.py"])
+    # print(f"Command finished with return code: {result.returncode}")
     p.join()
-    
-    '''os.system("streamlit run application/dashboard.py")
+
+    """os.system("streamlit run application/dashboard.py")
     multiprocessing.set_start_method("spawn", force=True)
     p = multiprocessing.Process(target=serialRcv.serialRcv())
     p.start()
@@ -32,4 +32,5 @@ if __name__ == "__main__":
     #if (pid > 0):
     #    os.system("streamlit run application/dashboard.py")
     #else:
-    #    serialRcv.serialRcv()'''
+    #    serialRcv.serialRcv()"""
+
