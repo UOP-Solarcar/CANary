@@ -4,16 +4,6 @@ import altair as alt
 import pandas as pd
 import numpy as np
 from multiprocessing import Process
-#import serialRcv
-
-#def start_serial_process():
-#    p = Process(target=serialRcv.serialRcv)
-#    p.daemon = True
-#    p.start()
-#    return p
-
-#if "serial_process" not in st.session_state:
-#    st.session_state.serial_process = start_serial_process()
 
 #Fault Thresholds
 TRIP_I_HI_dA  =  100.0    # +100.0 A  (units: 0.1 A)
@@ -68,15 +58,17 @@ def cell_voltage_to_soc(cell_voltage: float, clamp: bool = True) -> float:
 def soc_update_data() -> pd.DataFrame:
     df_raw = st.session_state.data
 
-    df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage"]].copy()
+    df = df_raw[["timestamp", "pack_soc", "pack_inst_voltage", "pack_current"]].copy()
+    df["watts"] = None
     for i in df.index:
         df.loc[i, "pack_soc"] = pack_voltage_to_soc(df.loc[i, "pack_inst_voltage"])
-    df.columns = ["timestamp", "pack_soc", "pack_inst_voltage"]
-    df = df.drop(columns = "pack_inst_voltage")
-    df.columns = ["timestamp", "pack_soc"]
+        df.loc[i, "watts"] = int(df.loc[i, "pack_inst_voltage"] * df.loc[i, "pack_current"])
+    df = df.drop(columns = ["pack_inst_voltage", "pack_current"])
+    df.columns = ["timestamp", "pack_soc", "watts"]
 
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df["pack_soc"] = pd.to_numeric(df["pack_soc"], errors="coerce")
+    df["watts"] = pd.to_numeric(df["watts"], errors="coerce")
     df = df.dropna()
     df = df.sort_values("timestamp").reset_index(drop=True)
 
@@ -100,6 +92,26 @@ def temp_update_data() -> pd.DataFrame:
         var_name="series",
         value_name="temperature",
     )
+
+def compute_battery_energy():
+    df_wh = st.session_state.data
+
+
+    df_wh['timestamp'] = pd.to_datetime(df_wh['timestamp'])
+    df_wh = df_wh.sort_values('timestamp').reset_index(drop=True)
+    df_wh['dt'] = df_wh['timestamp'].diff().dt.total_seconds()
+    df_wh = df_wh.dropna(subset=['dt'])
+
+    # Compute power (W)
+    df_wh['power'] = -df_wh['pack_current'] * df_wh['pack_inst_voltage']
+
+    # Compute incremental energy (Wh)
+    df_wh['energy_Wh'] = df_wh['power'] * df_wh['dt'] / 3600.0
+
+    total_energy = df_wh['energy_Wh'].sum()
+
+    return int(total_energy)
+    
 
 def fault_detection():
     df = st.session_state.data.sort_values("timestamp", ascending=False).reset_index(drop=True)[:1000]
@@ -150,7 +162,10 @@ def soc_chart():
         st.info("Waiting for SOC data...")
         return
     
-    base = alt.Chart(df_soc).encode(
+    df_soc['soc_series'] = 'State of Charge'
+    df_soc['watts_series'] = 'Power'
+
+    base = alt.Chart(df_soc).mark_line(strokeWidth=2).encode(
         x=alt.X(
             "timestamp:T", 
             title="Time", 
@@ -162,13 +177,52 @@ def soc_chart():
             title="State of Charge (%)",
             scale=alt.Scale(domain=[0, 100]),
         ),
+        color=alt.Color(
+            "soc_series:N",
+            scale=alt.Scale(domain=['State of Charge', 'Power'], 
+                          range=['#2563eb', '#d28500']),
+            legend=alt.Legend(title="Legend:")
+        ),
         tooltip=[
             alt.Tooltip("timestamp:T", title="Time", format="%H:%M:%S.%L"),
             alt.Tooltip("pack_soc:Q", title="SoC (%)", format=".1f"),
         ],
     )
 
-    chart = base.mark_line(color="#2563eb", strokeWidth=2)
+    base1 = alt.Chart(df_soc).mark_line(strokeWidth=2).encode(
+        x=alt.X(
+            "timestamp:T", 
+            title="Time", 
+            axis=alt.Axis(format="%H:%M:%S"), 
+            scale=alt.Scale(domain=[df_soc["timestamp"].iloc[-1] - pd.Timedelta(minutes=1), df_soc["timestamp"].iloc[-1]])
+        ),
+        y=alt.Y(
+            "watts:Q",
+            title="Power (W)",
+            scale=alt.Scale(domain=[-4500, 10000]),
+        ),
+        color=alt.Color(
+            "watts_series:N",
+            scale=alt.Scale(domain=['State of Charge', 'Power'], 
+                          range=['#2563eb', '#d28500']),
+            legend=alt.Legend(title="Legend:")
+        ),
+        tooltip=[
+            alt.Tooltip("timestamp:T", title="Time", format="%H:%M:%S.%L"),
+            alt.Tooltip("watts:Q", title="Power (W)", format=".1f"),
+        ],
+    )
+
+    # Combine charts with legend at bottom
+    chart = alt.layer(base, base1).resolve_scale(
+        y="independent"
+    ).resolve_legend(
+        color='shared'
+    ).configure_legend(
+        orient='bottom',
+        direction='horizontal',
+        titleOrient='left'
+    )
     st.altair_chart(chart.properties(height=400).interactive(), width='stretch')
 
 @st.fragment(run_every=5)
@@ -190,7 +244,7 @@ def temp_chart():
             title="Temperature (°C)", 
             scale=alt.Scale(domain=[0, 65])
         ),
-        color=alt.Color("series:N", title="Metric", legend=alt.Legend(
+        color=alt.Color("series:N", title="Legend:", legend=alt.Legend(
             labelExpr="datum.label == 'high_temp' ? 'High' : datum.label == 'low_temp' ? 'Low' : 'Avg'"
         )),
         tooltip=[
@@ -200,7 +254,11 @@ def temp_chart():
         ],
     )
 
-    chart = base.mark_line(strokeWidth=2)
+    chart = base.mark_line(strokeWidth=2).configure_legend(
+        orient='bottom',
+        direction='horizontal',
+        titleOrient='left'
+    )
     st.altair_chart(chart.properties(height=400).interactive(), width='stretch')
 
 @st.fragment(run_every=1)
@@ -215,7 +273,21 @@ def text_status():
         st.write(i)
     #st.markdown(''':red[Streamlit] :orange[can] :green[write] :blue[text] :violet[in] :gray[pretty] :rainbow[colors] and :blue-background[highlight] text.''')
 
+@st.fragment(run_every=2)
+def text_power():
+    st.write("Net Wh: ", compute_battery_energy())
 
+@st.fragment(run_every=1)
+def text_con_status():
+    if st.session_state.data.empty:
+        st.write("Connection: None")
+        return
+    last_time = pd.to_datetime(st.session_state.data.iloc[-1]["timestamp"])
+    time_delta = (datetime.now() - last_time).total_seconds()
+    
+    if time_delta > 5: st.write("Connection: Disconnected")
+    elif time_delta > 2: st.write("Connection: Unstable")
+    else: st.write("Connection: Good")
 
 st.set_page_config(layout="wide")
 header1, header2, header3, header4, header5, header6, header7 = st.columns(7, vertical_alignment="center")
@@ -223,11 +295,13 @@ with header1:
     if st.button("Home"):
         st.switch_page("pages/home_page.py")
 with header2:
-    st.write("Session Name")
+    st.write("data.csv")
 with header3:
-    st.write("Connection Status")
+    text_con_status()
 with header4:
     st.write("Mode: Live")
+with header5:
+    text_power()
 with header6:
     new_time()
 with header7:

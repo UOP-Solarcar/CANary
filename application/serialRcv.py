@@ -5,13 +5,14 @@ from datetime import datetime
 import serial.tools.list_ports
 
 for port in serial.tools.list_ports.comports():
-    if port.hwid.__contains__("PID=239A:800C"):#This only works for adafruit feather 32u4 boards, if hardware is swapped id must change
+    #This only works for adafruit feather 32u4 boards, if hardware is swapped id must change
+    if port.hwid.__contains__("PID=239A:800C"):
         PORT = port.device
 
-BAUD = 115200          # rate of transmission in bps
+BAUD = 115200
 
 class MESSAGE_ID(Enum):
-    BASIC = 0x6B0   # in Python Hex value is just another representation of integer. So can do operation on value as if it is integer
+    BASIC = 0x6B0
     BMS_TEMP = 0x6B1
     STRINGS = 0x6B2
     BATTERY_TEMP = 0x6B3
@@ -36,10 +37,6 @@ def read_frame(ser):
         b = ser.read(1)
         if not b:
             return None
-        '''
-        append requires integer, so this converts byte to integer representation,
-        and then converts it back into bytes object when appending
-        '''
         buffer.append(b[0])
 
         # Keep only last 4 bytes (sliding window)
@@ -58,7 +55,7 @@ def read_frame(ser):
         if not b:
             return None
         payload.append(b[0])
-    return (buffer, payload)    #if broke, change to hex(msg_id)
+    return (buffer, payload)
 
 def naturalizeData(msg_id, data):
     msg_id_value = int.from_bytes(msg_id[2:], byteorder = 'big')
