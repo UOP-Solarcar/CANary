@@ -1,6 +1,5 @@
 # CANary
 
-<<<<<<< HEAD
 Creating telemetry system to view CAN data remotely.
 =======
 **CANary** is a real-time telemetry pipeline for remotely monitoring Controller Area Network (CAN) data. It ingests CAN frames from a Battery Management System (BMS), transmits them over RF, and visualizes the data live via a Streamlit dashboard.
@@ -56,4 +55,3 @@ python serialRcv.py
 
 # 6. Run the Streamlit dashboard
 streamlit run dashboard.py
->>>>>>> refs/remotes/origin/master
