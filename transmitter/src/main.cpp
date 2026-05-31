@@ -20,13 +20,12 @@
 //MCP2515 CS pin
 #define MCP2515_CS 6
 
-const canid_t IDS[] = {0x6B0, 0x6B1, 0x6B2, 0x6B3, 0x6B4, 0x36};
-const uint8_t length = sizeof(IDS)/ sizeof(IDS[0]);
+const uint8_t length = 6;
 
+// Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
 uint8_t data[length*12 + 1];
 uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
 uint8_t count = 0;
-bool id_check[length] = {false};
 
 //Object instances
 MCP2515 mcp2515(MCP2515_CS);
@@ -71,21 +70,13 @@ void loop() {
   can_frame f;
   while (mcp2515.readMessage(&f) == MCP2515::ERROR_OK) {
     for (int i = 0; i < length; i++) {
-      if (!id_check[i] && IDS[i] == f.can_id) {
-        data[(i*12) + 1] = (f.can_id >> 24) & 0xFF;
-        data[(i*12) + 2] = (f.can_id >> 16) & 0xFF;
-        data[(i*12) + 3] = (f.can_id >> 8)  & 0xFF;
-        data[(i*12) + 4] =  f.can_id        & 0xFF;
-        memcpy(&data[(i*12) + 5], f.data, 8);
-        id_check[i] = true;
-        count = (count + 1);
-      }
+      data[(i*12) + 1] = (f.can_id >> 24) & 0xFF;
+      data[(i*12) + 2] = (f.can_id >> 16) & 0xFF;
+      data[(i*12) + 3] = (f.can_id >> 8)  & 0xFF;
+      data[(i*12) + 4] =  f.can_id        & 0xFF;
+      memcpy(&data[(i*12) + 5], f.data, 8);
     }
-    if (count == length) count = 0;
-    else continue;
 
-    // Pack CAN ID (4 bytes) + CAN data (8 bytes) = 12 bytes total
-    for (int i = 0; i < length; i++) id_check[i] = false;
     data[0] = 0x4D;
 
     if (driver.send(data, sizeof(data))) {
