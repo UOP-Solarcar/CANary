@@ -1,11 +1,12 @@
 from datetime import datetime
+from pathlib import Path
 import sqlite3
 import streamlit as st
 import altair as alt
 import pandas as pd
 import numpy as np
 
-DB_PATH = "bms_data.db"
+DB_PATH = str(Path(__file__).parent.parent / "data.db")
 
 # Fault Thresholds
 TRIP_I_HI_dA  =  100.0
@@ -33,28 +34,20 @@ _PACK_OCV_POINTS = _OCV_POINTS * CELLS_IN_SERIES
 
 # Database helpers
 def get_conn() -> sqlite3.Connection:
-    """
-    Return a read-only connection to the SQLite DB.
-    Uses Streamlit's connection cache so we don't open a new handle every rerun.
-    WAL mode means the writer (serialRcv.py) and this reader can coexist safely.
-    """
-    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True,
-                           check_same_thread=False)
+    if not Path(DB_PATH).exists():
+        st.error(f"Database not found: {DB_PATH}")
+        st.stop()
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def load_data(session_id: int | None = None) -> pd.DataFrame:
     """
-    Join all six message tables on nearest timestamp and return a flat DataFrame
-    whose columns match the names used throughout the rest of this file.
-
-    If session_id is None the latest session is used automatically.
-
-    Because packets arrive independently, we use SQLite's MIN(ABS(...)) trick
-    to find the closest row in each table to every BASIC row (BASIC is chosen
-    as the anchor because it arrives most frequently and carries the timestamp
-    that drives the charts).
+    Query each message table independently and join on nearest timestamp
+    using pandas merge_asof. This avoids a SQLite limitation where outer
+    query column references (e.g. b.received_at) are not resolvable inside
+    a correlated subquery's ORDER BY clause.
     """
     conn = get_conn()
 
@@ -62,100 +55,52 @@ def load_data(session_id: int | None = None) -> pd.DataFrame:
     if session_id is None:
         row = conn.execute("SELECT MAX(id) FROM sessions").fetchone()
         if row is None or row[0] is None:
+            conn.close()
             return pd.DataFrame()
         session_id = row[0]
 
-    sql = """
-    SELECT
-        b.received_at                   AS timestamp,
+    def query(table, cols):
+        return pd.read_sql_query(
+            f"SELECT received_at, {cols} FROM {table} "
+            f"WHERE session_id = ? ORDER BY received_at ASC",
+            conn, params=(session_id,)
+        )
 
-        -- basic
-        b.pack_current,
-        b.pack_inst_voltage,
-        b.pack_soc,
-        b.relay_state,
-
-        -- bms_temp  (closest row to each basic row)
-        bt.pack_dcl,
-        bt.pack_ccl,
-        bt.high_temp                    AS BMS_high_temp,
-        bt.low_temp                     AS BMS_low_temp,
-
-        -- strings
-        s.high_cell_voltage,
-        s.high_cell_voltage_id,
-        s.low_cell_voltage,
-        s.low_cell_voltage_id,
-
-        -- battery_temp
-        bat.high_temp                   AS cell_high_temp,
-        bat.high_thermistor_id,
-        bat.low_temp                    AS cell_low_temp,
-        bat.low_thermistor_id,
-        bat.avg_temp,
-        bat.internal_temp,
-
-        -- health
-        h.pack_health,
-        h.adaptive_total_capacity,
-        h.input_supply_voltage,
-
-        -- cell
-        c.cell_id,
-        c.instant_voltage,
-        c.internal_resistance,
-        c.open_voltage
-
-    FROM basic b
-
-    -- bms_temp: nearest by timestamp
-    LEFT JOIN bms_temp bt ON bt.id = (
-        SELECT id FROM bms_temp
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-
-    -- strings
-    LEFT JOIN strings s ON s.id = (
-        SELECT id FROM strings
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-
-    -- battery_temp
-    LEFT JOIN battery_temp bat ON bat.id = (
-        SELECT id FROM battery_temp
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-
-    -- health
-    LEFT JOIN health h ON h.id = (
-        SELECT id FROM health
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-
-    -- cell
-    LEFT JOIN cell c ON c.id = (
-        SELECT id FROM cell
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-
-    WHERE b.session_id = ?
-    ORDER BY b.received_at ASC
-    """
-
-    df = pd.read_sql_query(sql, conn, params=(session_id,))
+    basic   = query("basic",
+                    "pack_current, pack_inst_voltage, pack_soc, relay_state")
+    bms     = query("bms_temp",
+                    "pack_dcl, pack_ccl, "
+                    "high_temp AS BMS_high_temp, low_temp AS BMS_low_temp")
+    strings = query("strings",
+                    "high_cell_voltage, high_cell_voltage_id, "
+                    "low_cell_voltage, low_cell_voltage_id")
+    battery = query("battery_temp",
+                    "high_temp AS cell_high_temp, high_thermistor_id, "
+                    "low_temp AS cell_low_temp, low_thermistor_id, avg_temp, internal_temp")
+    health  = query("health",
+                    "pack_health, adaptive_total_capacity, input_supply_voltage")
+    cell    = query("cell",
+                    "cell_id, instant_voltage, internal_resistance, open_voltage")
     conn.close()
-    return df
 
+    if basic.empty:
+        return pd.DataFrame()
+
+    for df in [basic, bms, strings, battery, health, cell]:
+        df["received_at"] = pd.to_datetime(df["received_at"])
+
+    result = basic.rename(columns={"received_at": "timestamp"})
+    for other in [bms, strings, battery, health, cell]:
+        if other.empty:
+            continue
+        result = pd.merge_asof(
+            result, other.sort_values("received_at"),
+            left_on="timestamp", right_on="received_at",
+            direction="nearest"
+        )
+        result = result.drop(columns=["received_at"])
+
+    return result
 
 def latest_received_at() -> datetime | None:
     """Return the most recent received_at timestamp across ALL tables."""
@@ -181,7 +126,7 @@ def available_sessions() -> list[dict]:
     return [{"id": r["id"], "started_at": r["started_at"]} for r in rows]
 
 
-# SOC helpers (unchanged)
+# SOC helpers 
 def pack_voltage_to_soc(pack_voltage: float, clamp: bool = True) -> float:
     v_min = _PACK_OCV_POINTS[0]
     v_max = _PACK_OCV_POINTS[-1]

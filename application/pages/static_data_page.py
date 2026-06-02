@@ -1,15 +1,15 @@
 from datetime import datetime
+from pathlib import Path
 import sqlite3
 import streamlit as st
 import altair as alt
 import pandas as pd
 import numpy as np
 
-DB_PATH = "bms_data.db"
+DB_PATH = str(Path(__file__).parent.parent / "data.db")
+CSV_UPLOAD_LABEL = "Upload CSV File"
 
-# ---------------------------------------------------------------------------
 # Fault Thresholds
-# ---------------------------------------------------------------------------
 TRIP_I_HI_dA  =  100.0
 TRIP_I_LO_dA  = -42.5
 TRIP_V_HI_dV  =  95.0
@@ -18,9 +18,7 @@ TRIP_T_HI_C   =  45
 CELL_V_HI_ct  =  4.2000
 CELL_V_LO_ct  =  2.5000
 
-# ---------------------------------------------------------------------------
 # SOC / OCV lookup table
-# ---------------------------------------------------------------------------
 _SOC_POINTS = np.array([
     0.00, 0.02, 0.05, 0.08, 0.10, 0.13, 0.15, 0.20, 0.25, 0.30,
     0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80,
@@ -35,13 +33,12 @@ CELLS_IN_SERIES = 23
 _PACK_OCV_POINTS = _OCV_POINTS * CELLS_IN_SERIES
 
 
-# ---------------------------------------------------------------------------
 # Database helpers
-# ---------------------------------------------------------------------------
-
 def get_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True,
-                           check_same_thread=False)
+    if not Path(DB_PATH).exists():
+        st.error(f"Database not found: {DB_PATH}")
+        st.stop()
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -58,93 +55,55 @@ def available_sessions() -> list[dict]:
 
 def load_data(session_id: int) -> pd.DataFrame:
     """
-    Join all six message tables on nearest timestamp for the given session
-    and return a flat DataFrame with column names matching the rest of this file.
+    Query each message table independently and join on nearest timestamp
+    using pandas merge_asof. This avoids a SQLite limitation where outer
+    query column references (e.g. b.received_at) are not resolvable inside
+    a correlated subquery's ORDER BY clause.
     """
     conn = get_conn()
 
-    sql = """
-    SELECT
-        b.received_at                   AS timestamp,
+    def query(table, cols):
+        return pd.read_sql_query(
+            f"SELECT received_at, {cols} FROM {table} "
+            f"WHERE session_id = ? ORDER BY received_at ASC",
+            conn, params=(session_id,)
+        )
 
-        b.pack_current,
-        b.pack_inst_voltage,
-        b.pack_soc,
-        b.relay_state,
-
-        bt.pack_dcl,
-        bt.pack_ccl,
-        bt.high_temp                    AS BMS_high_temp,
-        bt.low_temp                     AS BMS_low_temp,
-
-        s.high_cell_voltage,
-        s.high_cell_voltage_id,
-        s.low_cell_voltage,
-        s.low_cell_voltage_id,
-
-        bat.high_temp                   AS cell_high_temp,
-        bat.high_thermistor_id,
-        bat.low_temp                    AS cell_low_temp,
-        bat.low_thermistor_id,
-        bat.avg_temp,
-        bat.internal_temp,
-
-        h.pack_health,
-        h.adaptive_total_capacity,
-        h.input_supply_voltage,
-
-        c.cell_id,
-        c.instant_voltage,
-        c.internal_resistance,
-        c.open_voltage
-
-    FROM basic b
-
-    LEFT JOIN bms_temp bt ON bt.id = (
-        SELECT id FROM bms_temp
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-    LEFT JOIN strings s ON s.id = (
-        SELECT id FROM strings
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-    LEFT JOIN battery_temp bat ON bat.id = (
-        SELECT id FROM battery_temp
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-    LEFT JOIN health h ON h.id = (
-        SELECT id FROM health
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-    LEFT JOIN cell c ON c.id = (
-        SELECT id FROM cell
-        WHERE session_id = b.session_id
-        ORDER BY ABS(JULIANDAY(received_at) - JULIANDAY(b.received_at))
-        LIMIT 1
-    )
-
-    WHERE b.session_id = ?
-    ORDER BY b.received_at ASC
-    """
-
-    df = pd.read_sql_query(sql, conn, params=(session_id,))
+    basic   = query("basic",
+                    "pack_current, pack_inst_voltage, pack_soc, relay_state")
+    bms     = query("bms_temp",
+                    "pack_dcl, pack_ccl, "
+                    "high_temp AS BMS_high_temp, low_temp AS BMS_low_temp")
+    strings = query("strings",
+                    "high_cell_voltage, high_cell_voltage_id, "
+                    "low_cell_voltage, low_cell_voltage_id")
+    battery = query("battery_temp",
+                    "high_temp AS cell_high_temp, high_thermistor_id, "
+                    "low_temp AS cell_low_temp, low_thermistor_id, avg_temp, internal_temp")
+    health  = query("health",
+                    "pack_health, adaptive_total_capacity, input_supply_voltage")
+    cell    = query("cell",
+                    "cell_id, instant_voltage, internal_resistance, open_voltage")
     conn.close()
-    return df
 
+    if basic.empty:
+        return pd.DataFrame()
 
-# ---------------------------------------------------------------------------
-# Session selector — shown until the user picks a session
-# ---------------------------------------------------------------------------
+    for df in [basic, bms, strings, battery, health, cell]:
+        df["received_at"] = pd.to_datetime(df["received_at"])
 
-CSV_UPLOAD_LABEL = "Upload a CSV file"
+    result = basic.rename(columns={"received_at": "timestamp"})
+    for other in [bms, strings, battery, health, cell]:
+        if other.empty:
+            continue
+        result = pd.merge_asof(
+            result, other.sort_values("received_at"),
+            left_on="timestamp", right_on="received_at",
+            direction="nearest"
+        )
+        result = result.drop(columns=["received_at"])
+
+    return result
 
 def session_selector():
     """
@@ -247,7 +206,6 @@ def compute_battery_energy() -> int:
     df_wh["energy_Wh"] = df_wh["power"] * df_wh["dt"] / 3600.0
     return int(df_wh["energy_Wh"].sum())
 
-
 def fault_detection() -> pd.DataFrame:
     df = st.session_state.data.sort_values("timestamp", ascending=False).reset_index(drop=True)[:1000]
     fault_mask = (
@@ -282,7 +240,7 @@ def describe_faults(row) -> str:
     return " | ".join(messages) if messages else "No fault"
 
 
-# Chart / display functions 
+# Chart / display functions
 @st.fragment(run_every=1)
 def new_time():
     st.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
